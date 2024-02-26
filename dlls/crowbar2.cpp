@@ -81,7 +81,7 @@ int CCrowbar::GetItemInfo( ItemInfo *p )
 	p->iMaxClip = WEAPON_NOCLIP;
 	p->iSlot = 0;
 	p->iPosition = 0;
-	p->iId = WEAPON_CROWBAR;
+	p->iId = WEAPON_CROWBAR2;
 	p->iWeight = CROWBAR_WEIGHT;
 	return 1;
 }
