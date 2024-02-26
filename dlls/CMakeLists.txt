@@ -64,6 +64,7 @@ set (SVDLL_SOURCES
 	controller.cpp
 	crossbow.cpp
 	crowbar.cpp
+	crowbar2.cpp
 	defaultai.cpp
 	doors.cpp
 	effects.cpp
