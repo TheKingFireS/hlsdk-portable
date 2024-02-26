@@ -22,31 +22,31 @@
 #include "player.h"
 #include "gamerules.h"
 
-#define	CROWBAR_BODYHIT_VOLUME 128
-#define	CROWBAR_WALLHIT_VOLUME 512
+#define	CROWBAR2_BODYHIT_VOLUME 128
+#define	CROWBAR2_WALLHIT_VOLUME 512
 
-LINK_ENTITY_TO_CLASS( weapon_crowbar2, CCrowbar )
+LINK_ENTITY_TO_CLASS( weapon_crowbar2, CCrowbar2 )
 
-enum crowbar_e
+enum crowbar2_e
 {
-	CROWBAR_IDLE = 0,
-	CROWBAR_DRAW,
-	CROWBAR_HOLSTER,
-	CROWBAR_ATTACK1HIT,
-	CROWBAR_ATTACK1MISS,
-	CROWBAR_ATTACK2MISS,
-	CROWBAR_ATTACK2HIT,
-	CROWBAR_ATTACK3MISS,
-#if !CROWBAR_IDLE_ANIM	
-	CROWBAR_ATTACK3HIT
+	CROWBAR2_IDLE = 0,
+	CROWBAR2_DRAW,
+	CROWBAR2_HOLSTER,
+	CROWBAR2_ATTACK1HIT,
+	CROWBAR2_ATTACK1MISS,
+	CROWBAR2_ATTACK2MISS,
+	CROWBAR2_ATTACK2HIT,
+	CROWBAR2_ATTACK3MISS,
+#if !CROWBAR2_IDLE_ANIM	
+	CROWBAR2_ATTACK3HIT
 #else
-	CROWBAR_ATTACK3HIT,
-	CROWBAR_IDLE2,
-	CROWBAR_IDLE3
+	CROWBAR2_ATTACK3HIT,
+	CROWBAR2_IDLE2,
+	CROWBAR2_IDLE3
 #endif
 };
 
-void CCrowbar::Spawn()
+void CCrowbar2::Spawn()
 {
 	Precache();
 	m_iId = WEAPON_CROWBAR2;
@@ -56,7 +56,7 @@ void CCrowbar::Spawn()
 	FallInit();// get ready to fall down.
 }
 
-void CCrowbar::Precache( void )
+void CCrowbar2::Precache( void )
 {
 	PRECACHE_MODEL( "models/v_crowbar2.mdl" );
 	PRECACHE_MODEL( "models/w_crowbar2.mdl" );
@@ -68,10 +68,10 @@ void CCrowbar::Precache( void )
 	PRECACHE_SOUND( "weapons/cbar_hitbod3.wav" );
 	PRECACHE_SOUND( "weapons/cbar_miss1.wav" );
 
-	m_usCrowbar = PRECACHE_EVENT( 1, "events/crowbar.sc" );
+	m_usCrowbar2 = PRECACHE_EVENT( 1, "events/crowbar.sc" );
 }
 
-int CCrowbar::GetItemInfo( ItemInfo *p )
+int CCrowbar2::GetItemInfo( ItemInfo *p )
 {
 	p->pszName = STRING( pev->classname );
 	p->pszAmmo1 = NULL;
@@ -86,7 +86,7 @@ int CCrowbar::GetItemInfo( ItemInfo *p )
 	return 1;
 }
 
-int CCrowbar::AddToPlayer( CBasePlayer *pPlayer )
+int CCrowbar2::AddToPlayer( CBasePlayer *pPlayer )
 {
 	if( CBasePlayerWeapon::AddToPlayer( pPlayer ) )
 	{
@@ -98,15 +98,15 @@ int CCrowbar::AddToPlayer( CBasePlayer *pPlayer )
 	return FALSE;
 }
 
-BOOL CCrowbar::Deploy()
+BOOL CCrowbar2::Deploy()
 {
-	return DefaultDeploy( "models/v_crowbar2.mdl", "models/p_crowbar2.mdl", CROWBAR_DRAW, "crowbar" );
+	return DefaultDeploy( "models/v_crowbar2.mdl", "models/p_crowbar2.mdl", CROWBAR2_DRAW, "crowbar2" );
 }
 
-void CCrowbar::Holster( int skiplocal /* = 0 */ )
+void CCrowbar2::Holster( int skiplocal /* = 0 */ )
 {
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5f;
-	SendWeaponAnim( CROWBAR_HOLSTER );
+	SendWeaponAnim( CROWBAR2_HOLSTER );
 }
 
 void FindHullIntersection( const Vector &vecSrc, TraceResult &tr, float *mins, float *maxs, edict_t *pEntity )
@@ -153,28 +153,28 @@ void FindHullIntersection( const Vector &vecSrc, TraceResult &tr, float *mins, f
 	}
 }
 
-void CCrowbar::PrimaryAttack()
+void CCrowbar2::PrimaryAttack()
 {
 	if( !Swing( 1 ) )
 	{
 #if !CLIENT_DLL
-		SetThink( &CCrowbar::SwingAgain );
+		SetThink( &CCrowbar2::SwingAgain );
 		pev->nextthink = gpGlobals->time + 0.1f;
 #endif
 	}
 }
 
-void CCrowbar::Smack()
+void CCrowbar2::Smack()
 {
-	DecalGunshot( &m_trHit, BULLET_PLAYER_CROWBAR );
+	DecalGunshot( &m_trHit, BULLET_PLAYER_CROWBAR2 );
 }
 
-void CCrowbar::SwingAgain( void )
+void CCrowbar2::SwingAgain( void )
 {
 	Swing( 0 );
 }
 
-int CCrowbar::Swing( int fFirst )
+int CCrowbar2::Swing( int fFirst )
 {
 	int fDidHit = FALSE;
 
@@ -203,7 +203,7 @@ int CCrowbar::Swing( int fFirst )
 #endif
 	if( fFirst )
 	{
-		PLAYBACK_EVENT_FULL( FEV_NOTHOST, m_pPlayer->edict(), m_usCrowbar, 
+		PLAYBACK_EVENT_FULL( FEV_NOTHOST, m_pPlayer->edict(), m_usCrowbar2, 
 		0.0f, g_vecZero, g_vecZero, 0, 0, 0,
 		0, 0, 0 );
 	}
@@ -214,7 +214,7 @@ int CCrowbar::Swing( int fFirst )
 		{
 			// miss
 			m_flNextPrimaryAttack = GetNextAttackDelay( 0.5 );
-#if CROWBAR_IDLE_ANIM
+#if CROWBAR2_IDLE_ANIM
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
 #endif
 			// player "shoot" animation
@@ -226,13 +226,13 @@ int CCrowbar::Swing( int fFirst )
 		switch( ( ( m_iSwing++ ) % 2 ) + 1 )
 		{
 		case 0:
-			SendWeaponAnim( CROWBAR_ATTACK1HIT );
+			SendWeaponAnim( CROWBAR2_ATTACK1HIT );
 			break;
 		case 1:
-			SendWeaponAnim( CROWBAR_ATTACK2HIT );
+			SendWeaponAnim( CROWBAR2_ATTACK2HIT );
 			break;
 		case 2:
-			SendWeaponAnim( CROWBAR_ATTACK3HIT );
+			SendWeaponAnim( CROWBAR2_ATTACK3HIT );
 			break;
 		}
 
@@ -261,12 +261,12 @@ int CCrowbar::Swing( int fFirst )
 #endif
 			{
 				// first swing does full damage
-				pEntity->TraceAttack( m_pPlayer->pev, gSkillData.plrDmgCrowbar, gpGlobals->v_forward, &tr, DMG_CLUB ); 
+				pEntity->TraceAttack( m_pPlayer->pev, gSkillData.plrDmgCrowbar2, gpGlobals->v_forward, &tr, DMG_CLUB ); 
 			}
 			else
 			{
 				// subsequent swings do half
-				pEntity->TraceAttack( m_pPlayer->pev, gSkillData.plrDmgCrowbar * 0.5f, gpGlobals->v_forward, &tr, DMG_CLUB ); 
+				pEntity->TraceAttack( m_pPlayer->pev, gSkillData.plrDmgCrowbar2 * 0.5f, gpGlobals->v_forward, &tr, DMG_CLUB ); 
 			}
 			ApplyMultiDamage( m_pPlayer->pev, m_pPlayer->pev );
 
@@ -286,7 +286,7 @@ int CCrowbar::Swing( int fFirst )
 					break;
 				}
 
-				m_pPlayer->m_iWeaponVolume = CROWBAR_BODYHIT_VOLUME;
+				m_pPlayer->m_iWeaponVolume = CROWBAR2_BODYHIT_VOLUME;
 
 				if( !pEntity->IsAlive() )
 				{
@@ -307,7 +307,7 @@ int CCrowbar::Swing( int fFirst )
 
 		if( fHitWorld )
 		{
-			float fvolbar = TEXTURETYPE_PlaySound( &tr, vecSrc, vecSrc + ( vecEnd - vecSrc ) * 2.0f, BULLET_PLAYER_CROWBAR );
+			float fvolbar = TEXTURETYPE_PlaySound( &tr, vecSrc, vecSrc + ( vecEnd - vecSrc ) * 2.0f, BULLET_PLAYER_CROWBAR2 );
 
 			if( g_pGameRules->IsMultiplayer() )
 			{
@@ -332,9 +332,9 @@ int CCrowbar::Swing( int fFirst )
 			m_trHit = tr;
 		}
 
-		m_pPlayer->m_iWeaponVolume = (int)( flVol * CROWBAR_WALLHIT_VOLUME );
+		m_pPlayer->m_iWeaponVolume = (int)( flVol * CROWBAR2_WALLHIT_VOLUME );
 
-		SetThink( &CCrowbar::Smack );
+		SetThink( &CCrowbar2::Smack );
 		pev->nextthink = gpGlobals->time + 0.2f;
 #endif
 #if CROWBAR_DELAY_FIX
@@ -350,7 +350,7 @@ int CCrowbar::Swing( int fFirst )
 }
 
 #if CROWBAR_IDLE_ANIM
-void CCrowbar::WeaponIdle( void )
+void CCrowbar2::WeaponIdle( void )
 {
 	if( m_flTimeWeaponIdle < UTIL_WeaponTimeBase() )
 	{
@@ -358,19 +358,19 @@ void CCrowbar::WeaponIdle( void )
 		float flRand = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 0, 1 );
 		if( flRand > 0.9f )
 		{
-			iAnim = CROWBAR_IDLE2;
+			iAnim = CROWBAR2_IDLE2;
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 160.0f / 30.0f;
 		}
 		else
 		{
 			if( flRand > 0.5f )
 			{
-				iAnim = CROWBAR_IDLE;
+				iAnim = CROWBAR2_IDLE;
 				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 70.0f / 25.0f;
 			}
 			else
 			{
-				iAnim = CROWBAR_IDLE3;
+				iAnim = CROWBAR2_IDLE3;
 				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 160.0f / 30.0f;
 			}
 		}
