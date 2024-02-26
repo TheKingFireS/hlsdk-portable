@@ -49,7 +49,7 @@ enum crowbar_e
 void CCrowbar::Spawn()
 {
 	Precache();
-	m_iId = WEAPON_CROWBAR;
+	m_iId = WEAPON_CROWBAR2;
 	SET_MODEL( ENT( pev ), "models/w_crowbar2.mdl" );
 	m_iClip = -1;
 
@@ -81,7 +81,7 @@ int CCrowbar::GetItemInfo( ItemInfo *p )
 	p->iMaxClip = WEAPON_NOCLIP;
 	p->iSlot = 0;
 	p->iPosition = 0;
-	p->iId = WEAPON_CROWBAR;
+	p->iId = WEAPON_CROWBAR2;
 	p->iWeight = CROWBAR_WEIGHT;
 	return 1;
 }
