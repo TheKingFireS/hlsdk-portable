@@ -15,7 +15,13 @@
 
 #define _NOENUMQBOOL
 
-#include <windows.h>
+#if _WIN32
+	#include <windows.h>
+#else
+	// placeholder
+	#include "extdll.h"
+	#include "win2nix.h"
+#endif
 
 extern "C" 
 {
