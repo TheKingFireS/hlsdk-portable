@@ -26,6 +26,7 @@
 #include	"skill.h"
 #include	"game.h"
 #include	"items.h"
+#include	"ricochet/discwar.h"
 #if !NO_VOICEGAMEMGR
 #include	"voice_gamemgr.h"
 #endif

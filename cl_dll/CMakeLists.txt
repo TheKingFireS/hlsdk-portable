@@ -63,11 +63,13 @@ if (USE_VGUI)
 endif()
 
 set (CLDLL_SOURCES
-	../dlls/crossbow.cpp
-	../dlls/crowbar.cpp
-	../dlls/egon.cpp
-	../dlls/gauss.cpp
-	../dlls/handgrenade.cpp
+	../dlls/ricochet/disc_arena.cpp
+	../dlls/ricochet/disc_arena.h
+	../dlls/ricochet/disc_objects.h
+	../dlls/ricochet/disc_powerups.cpp
+	../dlls/ricochet/disc_weapon.h
+	../dlls/ricochet/disc_weapon_disc.cpp
+	../dlls/ricochet/discwar.h
 	../dlls/hornetgun.cpp
 	../dlls/mp5.cpp
 	../dlls/python.cpp

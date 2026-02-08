@@ -1,17 +1,17 @@
 /***
-*
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
+ *
+ *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
+ *
+ *	This product contains software technology licensed from Id
+ *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
+ *	All Rights Reserved.
+ *
+ *   Use, distribution, and modification of this source code and/or resulting
+ *   object code is restricted to non-commercial enhancements to products from
+ *   Valve LLC.  All other use, distribution, or modification is prohibited
+ *   without written permission from Valve LLC.
+ *
+ ****/
 #pragma once
 #if !defined(PLAYER_H)
 #define PLAYER_H
@@ -68,7 +68,8 @@ typedef enum
 	PLAYER_JUMP,
 	PLAYER_SUPERJUMP,
 	PLAYER_DIE,
-	PLAYER_ATTACK1
+	PLAYER_ATTACK1,
+	PLAYER_FALL,
 } PLAYER_ANIM;
 
 #define MAX_ID_RANGE 2048
@@ -83,6 +84,8 @@ enum sbar_data
 };
 
 #define CHAT_INTERVAL 1.0f
+
+class CDiscArena;
 
 class CBasePlayer : public CBaseMonster
 {
@@ -102,7 +105,7 @@ public:
 	int					random_seed;    // See that is shared between client & server for shared weapons code
 
 	int					m_iPlayerSound;// the index of the sound list slot reserved for this player
-	int					m_iTargetVolume;// ideal sound volume. 
+	int					m_iTargetVolume;// ideal sound volume.
 	int					m_iWeaponVolume;// how loud the player's weapon is right now.
 	int					m_iExtraSoundTypes;// additional classification for this weapon's sound
 	int					m_iWeaponFlash;// brightness of the weapon flash
@@ -153,8 +156,8 @@ public:
 	int					m_idrowndmg;			// track drowning damage taken
 	int					m_idrownrestored;		// track drowning damage restored
 
-	int					m_bitsHUDDamage;		// Damage bits for the current fame. These get sent to 
-										// the hude via the DAMAGE message
+	int					m_bitsHUDDamage;		// Damage bits for the current fame. These get sent to
+	// the hude via the DAMAGE message
 	BOOL				m_fInitHUD;				// True when deferred HUD restart msg needs to be sent
 	BOOL				m_fGameHUDInitialized;
 	int					m_iTrain;				// Train control position
@@ -163,7 +166,7 @@ public:
 	EHANDLE				m_pTank;				// the tank which the player is currently controlling,  NULL if no tank
 	float				m_fDeadTime;			// the time at which the player died  (used in PlayerDeathThink())
 
-	BOOL			m_fNoPlayerSound;	// a debugging feature. Player makes no sound if this is true. 
+	BOOL			m_fNoPlayerSound;	// a debugging feature. Player makes no sound if this is true.
 	BOOL			m_fLongJump; // does this player have the longjump module?
 
 	float       m_tSneaking;
@@ -175,7 +178,7 @@ public:
 	int			m_iFOV;			// field of view
 	int			m_iClientFOV;	// client's known FOV
 
-	// usable player items 
+	// usable player items
 	CBasePlayerItem	*m_rgpPlayerItems[MAX_ITEM_TYPES];
 	CBasePlayerItem *m_pActiveItem;
 	CBasePlayerItem *m_pClientActiveItem;  // client version of the active item
@@ -219,19 +222,18 @@ public:
 	virtual	BOOL IsPlayer( void ) { return TRUE; }			// Spectators should return FALSE for this, they aren't "players" as far as game logic is concerned
 
 	virtual BOOL IsNetClient( void ) { return TRUE; }		// Bots should return FALSE for this, they can't receive NET messages
-															// Spectators should return TRUE for this
+	// Spectators should return TRUE for this
 	virtual const char *TeamID( void );
 
 	virtual int		Save( CSave &save );
 	virtual int		Restore( CRestore &restore );
 	void RenewItems(void);
-	void PackDeadPlayerItems( void );
 	void RemoveAllItems( BOOL removeSuit );
 	BOOL SwitchWeapon( CBasePlayerItem *pWeapon );
 
 	// JOHN:  sends custom messages if player HUD data has changed  (eg health, ammo)
 	virtual void UpdateClientData( void );
-	
+
 	static	TYPEDESCRIPTION m_playerSaveData[];
 
 	// Player is moved across the transition by other means
@@ -261,11 +263,10 @@ public:
 	void AddPoints( int score, BOOL bAllowNegativeScore );
 	void AddPointsToTeam( int score, BOOL bAllowNegativeScore );
 	BOOL AddPlayerItem( CBasePlayerItem *pItem );
-	BOOL RemovePlayerItem( CBasePlayerItem *pItem, bool bCallHoster );
+	BOOL RemovePlayerItem( CBasePlayerItem *pItem );
 	void DropPlayerItem ( char *pszItemName );
 	BOOL HasPlayerItem( CBasePlayerItem *pCheckItem );
 	BOOL HasNamedPlayerItem( const char *pszItemName );
-	BOOL HasPlayerItemFromID( int nID );
 	BOOL HasWeapons( void );// do I have ANY weapons?
 	void SelectPrevItem( int iItem );
 	void SelectNextItem( int iItem );
@@ -287,6 +288,8 @@ public:
 	void SetSuitUpdate( const char *name, int fgroup, int iNoRepeat );
 	void UpdateGeigerCounter( void );
 	void CheckTimeBasedDamage( void );
+	void UpdateStepSound( void );
+	void PlayStepSound(int step, float fvol);
 
 	BOOL FBecomeProne ( void );
 	void BarnacleVictimBitten ( entvars_t *pevBarnacle );
@@ -306,29 +309,56 @@ public:
 	void SetCustomDecalFrames( int nFrames );
 	int GetCustomDecalFrames( void );
 
-	void TabulateAmmo( void );
+	// Discwar
+	void GivePowerup( int iPowerupType );
+	void RemovePowerup( int iPowerupType );
+	void RemoveAllPowerups( void );
+	bool HasPowerup( int iPowerupType );
+	void ClearFreezeAndRender( void );
+	int	 m_iPowerups;
+	int	 m_iPowerupDiscs;
 
-	float m_flStartCharge;
-	float m_flAmmoStartCharge;
-	float m_flPlayAftershock;
-	float m_flNextAmmoBurn;// while charging, when to absorb another unit of player's ammo?
+	void Freeze( void );
+	int	 m_iFrozen;
+	int  m_iClientFrozen;
+	float m_flFreezeTime;
+	EHANDLE m_hLastPlayerToHitMe;
+	float m_flLastDiscHit;
+	int m_iLastDiscBounces;
+	float m_flLastDiscHitTeleport;
 
-	// Player ID
-	void InitStatusBar( void );
-	void UpdateStatusBar( void );
-	int m_izSBarState[SBAR_END];
-	float m_flNextSBarUpdateTime;
-	float m_flStatusBarDisappearDelay;
-	char m_SbarString0[SBAR_STRING_SIZE];
-	char m_SbarString1[SBAR_STRING_SIZE];
+	Vector	m_vecOldVelocity;
 
-	void SetPrefsFromUserinfo( char *infobuffer );
+	int	m_iClientDeaths, m_iClientFrags, m_iClientPlayerClass, m_iClientTeam;
 
-	float m_flNextChatTime;
+	// Discwar Arena Handling
+	EHANDLE		m_pNextPlayer;
+	CDiscArena	*m_pCurrentArena;
+	int			m_iArenaCombatantNumber;
+	int			m_iLastGameResult;
 
-	int m_iAutoWepSwitch;
+	// Discwar animation
+	int GetThrowAnim( void );
+	int GetHoldAnim( void );
+	int GetFallAnimation( void );
+	void Decapitate( entvars_t *pevKiller );
+	void Shatter( entvars_t *pevKiller );
 
-	Vector m_vecLastViewAngles;
+	float	m_flThrowTime;
+	float	m_flBackupTime;
+	float	m_flTransitionTime;
+	Vector  m_vecHitVelocity;
+	BOOL	m_bHasDisconnected;
+	float	m_flKnownItemTime;
+
+	void ObserverInput_ChangeMode();
+	void ObserverInput_PrevPlayer();
+	void ObserverInput_NextPlayer();
+
+	void ClientHearVox( const char *pSentence );
+
+	float m_flSendArenaStatus; //Sigh.
+	float m_flChangeAngles; //Double sigh.
 };
 
 #define AUTOAIM_2DEGREES  0.0348994967025
@@ -338,5 +368,11 @@ public:
 
 extern int gmsgHudText;
 extern BOOL gInitHUD;
+
+// Observer Movement modes (stored in pev->iuser1, so the physics code can get at them)
+#define OBS_CHASE_LOCKED		1
+#define OBS_CHASE_FREE			2
+#define OBS_ROAMING				3
+#define OBS_LOCKEDVIEW			4
 
 #endif // PLAYER_H
