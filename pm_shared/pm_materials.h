@@ -30,4 +30,11 @@
 #define CHAR_TEX_GLASS		'Y'
 #define CHAR_TEX_FLESH		'F'
 #define CHAR_TEX_SNOW		'N'
+
+// buz: paranoia texture types:
+#define CHAR_TEX_WOODS		'Z'
+#define CHAR_TEX_ASFALT		'A'
+#define CHAR_TEX_BETON		'B'
+#define CHAR_TEX_GRASS		'R'
+
 #endif//PM_MATERIALS_H

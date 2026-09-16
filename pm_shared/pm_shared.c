@@ -72,6 +72,12 @@ playermove_t *pmove = NULL;
 #define STEP_SLOSH		6		// shallow liquid puddle
 #define STEP_WADE		7		// wading in liquid
 #define STEP_LADDER		8		// climbing ladder
+// buz: paranoia step types:
+#define STEP_WOOD		9
+#define STEP_WOODS		10
+#define STEP_ASFALT		11
+#define STEP_BETON		12
+#define STEP_GRASS		13
 
 #define PLAYER_FATAL_FALL_SPEED		1024// approx 60 feet
 #define PLAYER_MAX_SAFE_FALL_SPEED	580// approx 20 feet
@@ -623,6 +629,105 @@ void PM_PlayStepSound( int step, float fvol )
 			break;
 		}
 		break;
+
+	// buz: paranoia steps
+	case STEP_WOODS:
+		switch(irand)
+		{
+		// right foot
+		case 0:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_wood_scr1.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 1:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_wood_scr2.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		// left foot
+		case 2:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_wood_scr3.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 3:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_wood_scr4.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		}
+		break;
+	case STEP_WOOD:
+		switch(irand)
+		{
+		// right foot
+		case 0:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_wood1.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 1:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_wood2.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		// left foot
+		case 2:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_wood3.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 3:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_wood4.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		}
+		break;
+	case STEP_ASFALT:
+		switch(irand)
+		{
+		// right foot
+		case 0:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_asf1.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 1:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_asf2.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		// left foot
+		case 2:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_asf3.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 3:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_asf4.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		}
+		break;
+	case STEP_BETON:
+		//pmove->Con_Printf ("beton\n");
+		switch(irand)
+		{
+		// right foot
+		case 0:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_beton1.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 1:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_beton2.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		// left foot
+		case 2:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_beton3.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 3:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_beton4.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		}
+		break;
+	case STEP_GRASS:
+		//pmove->Con_Printf ("grass\n");
+		switch(irand)
+		{
+		// right foot
+		case 0:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_grass1.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 1:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_grass2.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		// left foot
+		case 2:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_grass3.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		case 3:
+			pmove->PM_PlaySound( CHAN_BODY, "player/pl_grass4.wav", fvol, ATTN_NORM, 0, PITCH_NORM );
+			break;
+		}
+		break;
 	}
 }	
 
@@ -645,6 +750,17 @@ int PM_MapTextureTypeStepType( char chTextureType )
 			return STEP_TILE;
 		case CHAR_TEX_SLOSH:
 			return STEP_SLOSH;
+		// buz: paranoia
+		case CHAR_TEX_WOOD:
+			return STEP_WOOD;
+		case CHAR_TEX_WOODS:
+			return STEP_WOODS;
+		case CHAR_TEX_ASFALT:
+			return STEP_ASFALT;
+		case CHAR_TEX_BETON:
+			return STEP_BETON;
+		case CHAR_TEX_GRASS:
+			return STEP_GRASS;
 	}
 }
 
@@ -1247,6 +1363,12 @@ void PM_WalkMove( void )
 	VectorCopy( wishvel, wishdir );   // Determine maginitude of speed of move
 	wishspeed = VectorNormalize( wishdir );
 
+	// buz: clientmaxspeed is now means speed factor to wishspeed -
+	// from 0 to 100 percent
+	//pmove->Con_Printf("wishspeed before: %f\n", wishspeed);
+	wishspeed = wishspeed * pmove->clientmaxspeed / ( float )100.0f;
+	//pmove->Con_Printf("wishspeed: %f, maxspeed: %f\n", wishspeed, pmove->clientmaxspeed);
+
 	//
 	// Clamp to server defined max speed
 	//
@@ -1525,6 +1647,10 @@ void PM_WaterMove( void )
 	VectorCopy( wishvel, wishdir );
 	wishspeed = VectorNormalize( wishdir );
 
+	// buz: clientmaxspeed is now means speed factor to wishspeed -
+	// from 0 to 100 percent
+	wishspeed = wishspeed * pmove->clientmaxspeed / ( float )100.0f;
+
 	// Cap speed.
 	if( wishspeed > pmove->maxspeed )
 	{
@@ -1622,6 +1748,10 @@ void PM_AirMove( void )
 	 // Determine maginitude of speed of move
 	VectorCopy( wishvel, wishdir );
 	wishspeed = VectorNormalize( wishdir );
+
+	// buz: clientmaxspeed is now means speed factor to wishspeed -
+	// from 0 to 100 percent
+	wishspeed = wishspeed * pmove->clientmaxspeed / ( float )100.0f;
 
 	// Clamp to server defined max speed
 	if( wishspeed > pmove->maxspeed )
@@ -2750,7 +2880,12 @@ void PM_Jump( void )
 	}
 	else
 	{
-		pmove->velocity[2] = sqrt( 2.0f * 800.0f * 45.0f );
+		// buz: get jump height from player settings
+		//	jumpheight is percent from normal [0-100]
+
+		int jumpheight = atoi(pmove->PM_Info_ValueForKey(pmove->physinfo, "jh"));
+		pmove->velocity[2] = sqrt(2.0f * (800.0f / 100.0f) * jumpheight * 45.0f);
+		//		pmove->Con_DPrintf("PM: jumping with: %d\n", jumpheight);
 	}
 
 	// Decay it for simulation
@@ -2873,6 +3008,8 @@ void PM_CheckFalling( void )
 
 		if( fvol > 0.0f )
 		{
+			float punch;
+
 			// Play landing step right away
 			pmove->flTimeStepSound = 0;
 
@@ -2882,12 +3019,19 @@ void PM_CheckFalling( void )
 			PM_PlayStepSound( PM_MapTextureTypeStepType( pmove->chtexturetype ), fvol );
 
 			// Knock the screen around a little bit, temporary effect
-			pmove->punchangle[2] = pmove->flFallVelocity * 0.013f;	// punch z axis
+			/*pmove->punchangle[2] = pmove->flFallVelocity * 0.013f;	// punch z axis
 
 			if( pmove->punchangle[0] > 8 )
 			{
 				pmove->punchangle[0] = 8;
-			}
+			}*/
+
+			// buz: new punch system
+			punch = ( pmove->flFallVelocity > 700.0f ? 700.0f : pmove->flFallVelocity ) * 0.42f;
+			//pmove->Con_DPrintf( "fall vel: %f, punch: %f\n", pmove->flFallVelocity, punch/20.0f );
+			pmove->vuser3[0] += punch;
+			pmove->vuser3[1] += pmove->RandomFloat(punch/-10.0f, punch/10.0f);
+			pmove->vuser3[2] += pmove->RandomFloat(punch/-10.0f, punch/10.0f);
 		}
 	}
 
@@ -2968,14 +3112,48 @@ PM_DropPunchAngle
 
 =============
 */
+#define PUNCH_DAMPING		9.0f		// bigger number makes the response more damped, smaller is less damped
+										// currently the system will overshoot, with larger damping values it won't
+#define PUNCH_SPRING_CONSTANT	65.0f	// bigger number increases the speed at which the view corrects
+
+#define clamp( val, min, max ) ( ((val) > (max)) ? (max) : ( ((val) < (min)) ? (min) : (val) ) )
+
 void PM_DropPunchAngle( vec3_t punchangle )
 {
-	float len;
+	/*float len;
 	
 	len = VectorNormalize( punchangle );
 	len -= ( 10.0f + len * 0.5f ) * pmove->frametime;
 	len = max( len, 0.0f );
-	VectorScale( punchangle, len, punchangle );
+	VectorScale( punchangle, len, punchangle );*/
+
+	// buz: у нас теперь новый, свежеспертый из хл2, пунч.
+	float damping;
+	float springForceMagnitude;
+
+	if ( Length(punchangle) > 0.001f || Length(pmove->vuser3) > 0.001f )
+	{
+		VectorMA(punchangle, pmove->frametime, pmove->vuser3, punchangle);
+		damping = 1.0f - (PUNCH_DAMPING * pmove->frametime);
+
+		if ( damping < 0.0f )
+		{
+			damping = 0.0f;
+		}
+		VectorScale(pmove->vuser3, damping, pmove->vuser3);
+
+		// torsional spring
+		// UNDONE: Per-axis spring constant?
+		springForceMagnitude = PUNCH_SPRING_CONSTANT * pmove->frametime;
+		springForceMagnitude = clamp(springForceMagnitude, 0.0f, 2.0f );
+
+		VectorMA(pmove->vuser3, -springForceMagnitude, punchangle, pmove->vuser3);
+
+		// don't wrap around
+		punchangle[0] = clamp( punchangle[0], -89.0f, 89.0f );
+		punchangle[1] = clamp( punchangle[1], -179.0f, 179.0f );
+		punchangle[2] = clamp( punchangle[2], -89.0f, 89.0f );
+	}
 }
 
 /*
@@ -2987,18 +3165,21 @@ PM_CheckParamters
 void PM_CheckParamters( void )
 {
 	float spd;
-	float maxspeed;
+	//float maxspeed;
 	vec3_t v_angle;
 
 	spd = ( pmove->cmd.forwardmove * pmove->cmd.forwardmove ) + ( pmove->cmd.sidemove * pmove->cmd.sidemove ) +
 		( pmove->cmd.upmove * pmove->cmd.upmove );
 	spd = sqrt( spd );
 
-	maxspeed = pmove->clientmaxspeed; //atof( pmove->PM_Info_ValueForKey( pmove->physinfo, "maxspd" ) );
-	if( maxspeed != 0.0f )
-	{
-		pmove->maxspeed = min( maxspeed, pmove->maxspeed );
-	}
+	// buz: clientmaxspeed is now means speed factor to wishspeed -
+	// from 0 to 100 percent
+
+	//maxspeed = pmove->clientmaxspeed; //atof( pmove->PM_Info_ValueForKey( pmove->physinfo, "maxspd" ) );
+	//if( maxspeed != 0.0f )
+	//{
+	//	pmove->maxspeed = min( maxspeed, pmove->maxspeed );
+	//}
 
 	// Slow down, I'm pulling it! (a box maybe) but only when I'm standing on ground
 	//
@@ -3463,6 +3644,8 @@ void PM_Move( struct playermove_s *ppmove, int server )
 	assert( pm_shared_initialized );
 
 	pmove = ppmove;
+
+	//pmove->Con_Printf( "clientmaxspeed: %f\n", ppmove->clientmaxspeed );
 
 	//pmove->Con_Printf( "PM_Move: %g, frametime %g, onground %i\n", pmove->time, pmove->frametime, pmove->onground );
 	
