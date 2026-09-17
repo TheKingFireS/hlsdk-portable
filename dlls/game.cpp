@@ -906,6 +906,10 @@ void GameDLLInit( void )
 	CVAR_REGISTER ( &sk_primary_speed2 );
 	CVAR_REGISTER ( &sk_primary_speed3 );
 
+	CVAR_REGISTER ( &sk_secondary_speed1 );
+	CVAR_REGISTER ( &sk_secondary_speed2 );
+	CVAR_REGISTER ( &sk_secondary_speed3 );
+
 // END REGISTER CVARS FOR SKILL LEVEL STUFF
 
 	CVAR_REGISTER( &sv_pushable_fixed_tick_fudge );
