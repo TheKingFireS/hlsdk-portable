@@ -18,8 +18,8 @@
 #pragma once
 #if !defined(GAMERULES_H)
 #define GAMERULES_H
-//LRC
-#define GAME_NAME "Spirit of Half-Life"
+//LRC // buz :)
+#define GAME_NAME "Half-Life: Paranoia"
 //#include "weapons.h"
 //#include "items.h"
 class CBasePlayerItem;
