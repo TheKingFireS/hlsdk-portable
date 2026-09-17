@@ -43,6 +43,8 @@
 #include "movewith.h"
 #include "pm_shared.h"
 
+#include "skill.h" // buz
+
 extern DLL_GLOBAL ULONG		g_ulModelIndexPlayer;
 extern DLL_GLOBAL BOOL		g_fGameOver;
 extern DLL_GLOBAL int		g_iSkillLevel;

@@ -145,6 +145,10 @@ public:
 	unsigned int		m_afPhysicsFlags;	// physics flags - set when 'normal' physics should be revisited or overriden
 	float				m_fNextSuicideTime; // the time after which the player can next use the suicide command
 
+	// buz: jumping height
+	int		m_iJumpHeight; // in percents, 0 - 100
+	void	SetJumpHeight( int value );
+
 	// these are time-sensitive things that we keep track of
 	float				m_flTimeStepSound;	// when the last stepping sound was made
 	float				m_flTimeWeaponIdle; // when to play another weapon idle animation.
@@ -191,6 +195,8 @@ public:
 	int			m_iClientHideHUD;
 	int			m_iFOV;			// field of view
 	int			m_iClientFOV;	// client's known FOV
+
+	void ViewPunch( float p, float y, float r ); // buz - нагло спер из хл2
 
 	// usable player items 
 	CBasePlayerItem	*m_rgpPlayerItems[MAX_ITEM_TYPES];

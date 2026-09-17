@@ -615,7 +615,6 @@ void HUD_InitClientWeapons( void )
 	g_engfuncs.pfnPrecacheEvent = stub_PrecacheEvent;
 	g_engfuncs.pfnNameForFunction = stub_NameForFunction;
 	g_engfuncs.pfnSetModel = stub_SetModel;
-	g_engfuncs.pfnSetClientMaxspeed = HUD_SetMaxSpeed;
 
 	// Handled locally
 	g_engfuncs.pfnPlaybackEvent = HUD_PlaybackEvent;
@@ -829,7 +828,6 @@ void HUD_WeaponsPostThink( local_state_s *from, local_state_s *to, usercmd_t *cm
 
 	player.pev->deadflag = from->client.deadflag;
 	g_iWaterLevel = player.pev->waterlevel = from->client.waterlevel; //LRC - for DMC fog
-	player.pev->maxspeed = from->client.maxspeed;
 	player.pev->fov = from->client.fov;
 	player.pev->weaponanim = from->client.weaponanim;
 	player.pev->viewmodel = from->client.viewmodel;
@@ -908,7 +906,6 @@ void HUD_WeaponsPostThink( local_state_s *from, local_state_s *to, usercmd_t *cm
 	to->client.m_flNextAttack = player.m_flNextAttack;
 	to->client.fuser2 = player.m_flNextAmmoBurn;
 	to->client.fuser3 = player.m_flAmmoStartCharge;
-	to->client.maxspeed = player.pev->maxspeed;
 
 	//HL Weapons
 	to->client.vuser1[0] = player.ammo_9mm;

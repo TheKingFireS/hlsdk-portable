@@ -790,7 +790,6 @@ if active == 1 then we are 1) not playing back demos ( where our commands are ig
 */
 void DLLEXPORT CL_CreateMove( float frametime, struct usercmd_s *cmd, int active )
 {
-	float spd;
 	vec3_t viewangles;
 	static vec3_t oldangles;
 
@@ -833,7 +832,8 @@ void DLLEXPORT CL_CreateMove( float frametime, struct usercmd_s *cmd, int active
 		}
 
 		// clip to maxspeed
-		spd = gEngfuncs.GetClientMaxspeed();
+		// buz: little fix - dont need to do it here, pm code will handle it
+		/*spd = gEngfuncs.GetClientMaxspeed();
 		if( spd != 0.0f )
 		{
 			// scale the 3 speeds so that the total velocity is not > cl.maxspeed
@@ -846,7 +846,7 @@ void DLLEXPORT CL_CreateMove( float frametime, struct usercmd_s *cmd, int active
 				cmd->sidemove *= fratio;
 				cmd->upmove *= fratio;
 			}
-		}
+		}*/
 
 		// Allow mice and other controllers to add their inputs
 		IN_Move( frametime, cmd );

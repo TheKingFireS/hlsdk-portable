@@ -136,6 +136,10 @@ struct skilldata_t
 	float plrStomach;
 	float plrLeg;
 	float plrArm;
+
+	// buz: maxspeeds
+	float plrPrimaryMaxSpeed;	// in primary weapon mode
+	float plrSecondaryMaxSpeed;	// in secondary weapon mode
 };
 
 extern	DLL_GLOBAL	skilldata_t	gSkillData;

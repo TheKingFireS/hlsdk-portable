@@ -307,6 +307,10 @@ void CGameRules::RefreshSkillData ( void )
 	gSkillData.plrStomach = GetSkillCvar( "sk_player_stomach" );
 	gSkillData.plrLeg = GetSkillCvar( "sk_player_leg" );
 	gSkillData.plrArm = GetSkillCvar( "sk_player_arm" );
+
+	// buz: maxspeeds
+	gSkillData.plrPrimaryMaxSpeed = GetSkillCvar( "sk_primary_speed" );
+	gSkillData.plrSecondaryMaxSpeed = GetSkillCvar( "sk_secondary_speed" );
 }
 
 void CGameRules::ClientUserInfoChanged( CBasePlayer *pPlayer, char *infobuffer )

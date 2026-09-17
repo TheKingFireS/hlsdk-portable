@@ -126,6 +126,9 @@ TYPEDESCRIPTION	CBasePlayer::m_playerSaveData[] =
 	DEFINE_FIELD( CBasePlayer, m_iHideHUD, FIELD_INTEGER ),
 	DEFINE_FIELD( CBasePlayer, m_iFOV, FIELD_INTEGER ),
 
+	// buz
+	DEFINE_FIELD( CBasePlayer, m_iJumpHeight, FIELD_INTEGER ),
+
 	//LRC
 //	DEFINE_FIELD( CBasePlayer, m_iFogStartDist, FIELD_INTEGER ),
 //	DEFINE_FIELD( CBasePlayer, m_iFogEndDist, FIELD_INTEGER ),
@@ -555,6 +558,41 @@ int CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, fl
 	m_bitsDamageType |= bitsDamage; // Save this so we can report it to the client
 	m_bitsHUDDamage = -1;  // make sure the damage bits get resent
 
+	// buz: new punch system
+	if (bitsDamage & (DMG_BULLET | DMG_BLAST) && pevInflictor && pevInflictor != pev)
+	{
+		float punch, pmax, divide;
+
+		if (bitsDamage & DMG_BLAST )
+		{
+			pmax = CVAR_GET_FLOAT("blast_punch_max");
+			divide = CVAR_GET_FLOAT("blast_punch_divide");
+		}
+		else
+		{
+			pmax = CVAR_GET_FLOAT("bullet_punch_max");
+			divide = CVAR_GET_FLOAT("bullet_punch_divide");
+		}
+
+		if (divide == 0) divide = 1;
+
+		punch = (flDamage > pmax ? pmax : flDamage) / divide;
+		Vector to = pevInflictor->origin - pev->origin;
+		to.z = 0;
+		to = to.Normalize();
+		Vector tempAngle = Vector(0, pev->v_angle.y, 0);
+		UTIL_MakeVectors(tempAngle);
+
+		ViewPunch(DotProduct(gpGlobals->v_forward, to) * punch,
+				  DotProduct(gpGlobals->v_right, to) * punch,
+				  DotProduct(gpGlobals->v_right, to) * punch);
+	}
+	else
+	{
+		//	pev->punchangle.x = -2; // old punchangle
+		ViewPunch(1, 0, 0);
+	}
+
 	while( fTookDamage && ( !ftrivial || ( bitsDamage & DMG_TIMEBASED ) ) && ffound && bitsDamage )
 	{
 		ffound = FALSE;
@@ -640,8 +678,6 @@ int CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, fl
 			ffound = TRUE;
 		}
 	}
-
-	pev->punchangle.x = -2;
 
 	if( fTookDamage && !ftrivial && fmajor && flHealthPrev >= 75 )
 	{
@@ -3122,6 +3158,10 @@ void CBasePlayer::Spawn( void )
 	m_afPhysicsFlags = 0;
 	m_fLongJump = FALSE;// no longjump module. 
 
+	// buz
+	//m_iJumpHeight = 100;
+	SetJumpHeight(100);
+
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "slj", "0" );
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "hl", "1" );
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "fr", "1" );
@@ -3230,6 +3270,9 @@ void CBasePlayer::Precache( void )
 
 	m_iTrain |= TRAIN_NEW;
 
+	// buz: Paranoia's speed adjustment
+	pev->maxspeed = gSkillData.plrPrimaryMaxSpeed;
+
 	// Make sure any necessary user messages have been registered
 	LinkUserMessages();
 
@@ -3314,6 +3357,9 @@ int CBasePlayer::Restore( CRestore &restore )
 	{
 		g_engfuncs.pfnSetPhysicsKeyValue( edict(), "slj", "0" );
 	}
+
+	// buz: restore jump height
+	SetJumpHeight (m_iJumpHeight);
 
 	RenewItems();
 
@@ -5391,7 +5437,15 @@ void CInfoIntermission::Think( void )
 
 LINK_ENTITY_TO_CLASS( info_intermission, CInfoIntermission );
 
-
+// buz: set jump height function
+void CBasePlayer::SetJumpHeight(int value)
+{
+	m_iJumpHeight = value;
+	char buf[16];
+	snprintf(buf, sizeof(buf), "%i", m_iJumpHeight);
+	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "jh", buf );
+	//	ALERT(at_aiconsole, "SETTING JUMP: %s\n", buf);
+}
 
 //==============================================================
 // Hud sprite displayer
@@ -5454,3 +5508,12 @@ void CHudSprite::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE us
 }
 
 LINK_ENTITY_TO_CLASS( hud_sprite, CHudSprite );
+
+// buz
+void CBasePlayer::ViewPunch( float p, float y, float r )
+{
+	// vuser3 is punch speed
+	pev->vuser3[0] -= p * 20;
+	pev->vuser3[1] += y * 20;
+	pev->vuser3[2] += r * 20;
+}

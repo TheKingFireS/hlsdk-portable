@@ -45,6 +45,7 @@ else()
 endif()
 
 set (SVDLL_SOURCES
+	paranoia/paranoia_wpn.cpp
 	agrunt.cpp
 	airtank.cpp
 	aflock.cpp
