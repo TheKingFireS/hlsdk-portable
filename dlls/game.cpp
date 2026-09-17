@@ -444,6 +444,15 @@ cvar_t	sk_player_head1	= { "sk_player_head1","2" };
 cvar_t	sk_player_head2	= { "sk_player_head2","2" };
 cvar_t	sk_player_head3	= { "sk_player_head3","2" };
 
+// buz: paranoia cvars
+cvar_t	sk_primary_speed1 = { "sk_primary_speed1","1" };
+cvar_t	sk_primary_speed2 = { "sk_primary_speed2","1" };
+cvar_t	sk_primary_speed3 = { "sk_primary_speed3","1" };
+
+cvar_t	sk_secondary_speed1 = { "sk_secondary_speed1","1" };
+cvar_t	sk_secondary_speed2 = { "sk_secondary_speed2","1" };
+cvar_t	sk_secondary_speed3 = { "sk_secondary_speed3","1" };
+
 cvar_t	sk_player_chest1 = { "sk_player_chest1","1" };
 cvar_t	sk_player_chest2 = { "sk_player_chest2","1" };
 cvar_t	sk_player_chest3 = { "sk_player_chest3","1" };
@@ -891,6 +900,12 @@ void GameDLLInit( void )
 	CVAR_REGISTER( &sk_player_leg1 );
 	CVAR_REGISTER( &sk_player_leg2 );
 	CVAR_REGISTER( &sk_player_leg3 );
+
+	// buz: paranoia entries
+	CVAR_REGISTER ( &sk_primary_speed1 );
+	CVAR_REGISTER ( &sk_primary_speed2 );
+	CVAR_REGISTER ( &sk_primary_speed3 );
+
 // END REGISTER CVARS FOR SKILL LEVEL STUFF
 
 	CVAR_REGISTER( &sv_pushable_fixed_tick_fudge );

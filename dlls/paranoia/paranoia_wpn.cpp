@@ -99,15 +99,15 @@ void DebugListSpreadTable( void )
 
 
 extern char com_token[ 1500 ];
-char *COM_Parse (char *data);
+const char *COM_Parse (const char *data);
 
 void LoadSpreadTable( char *filename )
 {
 	gSCounter = 0;
 	
 	int length;
-	char *pFile;
-	char *aFile = pFile = (char*)LOAD_FILE_FOR_ME( filename, &length );
+	const char *pFile;
+	const char *aFile = pFile = (const char*)LOAD_FILE_FOR_ME( filename, &length );
 
 	if (!pFile || !length)
 	{
@@ -397,7 +397,7 @@ void LoadSpreadTable( char *filename )
 	
 	ALERT(at_console, "%d spread weapons info loaded from %s\n", gSCounter, filename);
 
-	FREE_FILE( aFile );
+	FREE_FILE( (void *)aFile );
 
 	// initialize default spread
 	sprintf (gDefaultSpread.szWeaponName, "default\n");

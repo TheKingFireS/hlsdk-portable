@@ -1165,7 +1165,7 @@ void DestroyMapCycle( mapcycle_t *cycle )
 	cycle->next_item = NULL;
 }
 
-static char com_token[1500];
+char com_token[1500];
 
 /*
 ==============
