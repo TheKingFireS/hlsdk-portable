@@ -13,6 +13,30 @@
 #include "../pm_shared/pm_defs.h"
 #include "string.h"
 
+// UTIL_GetClientEntityWithServerIndex - from Xash by G-Cont
+//
+// Purpose: searches for the server entity on client
+// Assumes:	colormap has server entity index
+cl_entity_t *UTIL_GetClientEntityWithServerIndex( int sv_index )
+{
+	cl_entity_t *e;
+
+	for (int ic=1;ic<MAX_EDICTS;ic++)
+	{
+		e = gEngfuncs.GetEntityByIndex( ic );
+		if (!e)
+			break;
+
+		if (!e->model)
+			continue;
+
+		if (e->curstate.colormap == sv_index)
+			return e;
+	}
+
+	return NULL;
+}
+
 float ParticleSystem::c_fCosTable[360 + 90];
 bool ParticleSystem::c_bCosTableInit = false;
 
@@ -159,6 +183,7 @@ RandomRange::RandomRange( char *szToken )
 ParticleSystem::ParticleSystem( int iEntIndex, char *szFilename )
 {
 	int iParticles = 100; // default
+	gEngfuncs.Con_Printf(":: particle system created (%d, %s)\n", iEntIndex, szFilename);
 
 	m_iEntIndex = iEntIndex;
 	m_pNextSystem = NULL;
@@ -235,6 +260,7 @@ void ParticleSystem::AllocateParticles( int iParticles )
 
 ParticleSystem::~ParticleSystem( void )
 {
+	gEngfuncs.Con_Printf(":: particle system deleted \n");
 	delete[] m_pAllParticles;
 
 	ParticleType *pType = m_pFirstType;
@@ -571,7 +597,8 @@ void ParticleSystem::CalculateDistance()
 bool ParticleSystem::UpdateSystem( float frametime, /*vec3_t &right, vec3_t &up,*/ int messagenum )
 {
 	// the entity emitting this system
-	cl_entity_t *source = gEngfuncs.GetEntityByIndex( m_iEntIndex );
+	//cl_entity_t *source = gEngfuncs.GetEntityByIndex( m_iEntIndex );
+	cl_entity_t *source = UTIL_GetClientEntityWithServerIndex( m_iEntIndex ); // buz
 
 	// Don't update if the system is outside the player's PVS.
 	if(!source || source->curstate.messagenum < messagenum)
