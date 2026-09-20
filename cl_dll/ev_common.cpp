@@ -175,8 +175,10 @@ void EV_GetDefaultShellInfo( event_args_t *args, float *origin, float *velocity,
 		}
 	}
 
-	fR = gEngfuncs.pfnRandomFloat( 50, 70 );
-	fU = gEngfuncs.pfnRandomFloat( 100, 150 );
+	//fR = gEngfuncs.pfnRandomFloat( 50, 70 );
+	//fU = gEngfuncs.pfnRandomFloat( 100, 150 );
+	fR = gEngfuncs.pfnRandomFloat( 80, 120 );
+	fU = gEngfuncs.pfnRandomFloat( 10, 30 ); // buz
 
 	for( i = 0; i < 3; i++ )
 	{

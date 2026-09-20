@@ -117,7 +117,8 @@ public:
 private:
 	HSPRITE m_hSprite;
 	HSPRITE m_hDamage;
-	
+	int m_hDecoration; // buz
+
 	DAMAGE_IMAGE m_dmg[NUM_DMG_TYPES];
 	int m_bitsDamage;
 	int DrawPain( float fTime );
