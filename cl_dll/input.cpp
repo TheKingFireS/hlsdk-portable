@@ -790,6 +790,7 @@ if active == 1 then we are 1) not playing back demos ( where our commands are ig
 */
 void DLLEXPORT CL_CreateMove( float frametime, struct usercmd_s *cmd, int active )
 {
+	//float spd;
 	vec3_t viewangles;
 	static vec3_t oldangles;
 
