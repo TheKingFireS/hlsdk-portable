@@ -91,6 +91,8 @@ DLL_DECALLIST gDecals[] = {
 	{ "{smscorch3", 0 },		// DECAL_SMALLSCORCH3,	// Small scorch mark
 	{ "{mommablob", 0 },		// DECAL_MOMMABIRTH		// BM Birth spray
 	{ "{mommablob", 0 },		// DECAL_MOMMASPLAT		// BM Mortar spray?? need decal
+	{ "{knife1", 0 },			// DECAL_KNIFE1 - buz
+	{ "{knife2", 0 },			// DECAL_KNIFE2
 };
 
 /*
@@ -452,7 +454,7 @@ LINK_ENTITY_TO_CLASS( worldspawn, CWorld )
 
 extern DLL_GLOBAL BOOL		g_fGameOver;
 
-BOOL g_startSuit; //LRC
+//BOOL g_startSuit; //LRC
 
 void CWorld::Spawn( void )
 {
@@ -548,7 +550,10 @@ void CWorld::Precache( void )
 	// styles 32-62 are assigned by the light program for switchable lights
 
 	// 63 testing
+	// buz: turn off bump-mapping styles
 	LIGHT_STYLE( 63, "a" );
+	LIGHT_STYLE( 62, "a" );
+	LIGHT_STYLE( 61, "a" );
 
 	for( i = 0; i < (int)ARRAYSIZE( gDecals ); i++ )
 		gDecals[i].index = DECAL_INDEX( gDecals[i].name );
@@ -693,11 +698,11 @@ void CWorld::KeyValue( KeyValueData *pkvd )
 		pkvd->fHandled = TRUE;
 	}
 	//LRC- let map designers start the player with his suit already on
-	else if ( FStrEq(pkvd->szKeyName, "startsuit") )
+	/*else if ( FStrEq(pkvd->szKeyName, "startsuit") )
 	{
 		g_startSuit = atoi(pkvd->szValue);
 		pkvd->fHandled = TRUE;
-	}
+	}*/
 	else if ( FStrEq(pkvd->szKeyName, "allowmonsters") )
 	{
 		CVAR_SET_FLOAT( "mp_allowmonsters", atof(pkvd->szValue) );

@@ -51,9 +51,13 @@ CBaseEntity
 #define		FCAP_MASTER				0x00000080		// Can be used to "master" other entities (like multisource)
 														// LRC: no longer used
 #define		FCAP_ONLYDIRECT_USE			0x00000100		//LRC - can't use this entity through a wall.
+#define		FCAP_DISTANCE_USE			0x00000200		//buz - can be used without distance restrictions
 
 // UNDONE: This will ignore transition volumes (trigger_transition), but not the PVS!!!
 #define		FCAP_FORCE_TRANSITION		0x00000080		// ALWAYS goes across transitions
+
+// Wargon: Энтитя не будет показывать иконку юза, даже если она юзабельна.
+#define		FCAP_HIDE_USE				0x00000400
 
 #include "saverestore.h"
 #include "schedule.h"
@@ -131,6 +135,7 @@ typedef void(CBaseEntity::*USEPTR)( CBaseEntity *pActivator, CBaseEntity *pCalle
 #define CLASS_FACTION_B			15
 #define CLASS_FACTION_C			16
 #define CLASS_VEHICLE			17
+#define CLASS_TERROR			18 // buz
 #define	CLASS_BARNACLE			99 // special because no one pays attention to it, and it eats a wide cross-section of creatures.
 
 class CBaseEntity;
@@ -186,7 +191,7 @@ public:
 	Vector				m_vecPostAssistVel; // LRC
 	Vector				m_vecPostAssistAVel; // LRC
 	float				m_fNextThink; // LRC - for SetNextThink and SetPhysThink. Marks the time when a think will be performed - not necessarily the same as pev->nextthink!
-	float				m_fPevNextThink; // LRC - always set equal to pev->nextthink, so that we can tell when the latter gets changed by the @#$^¬! engine.
+	float				m_fPevNextThink; // LRC - always set equal to pev->nextthink, so that we can tell when the latter gets changed by the @#$^B¬! engine.
 	int					m_iLFlags; // LRC- a new set of flags. (pev->spawnflags and pev->flags are full...)
 	virtual void		DesiredAction( void ) {}; // LRC - for postponing stuff until PostThink time, not as a think.
 	int					m_iStyle; // LRC - almost anything can have a lightstyle these days...
@@ -231,6 +236,9 @@ public:
 
 	//LRC - aliases
 	virtual BOOL IsAlias( void ) { return FALSE; }
+
+	// buz - gas reactions (should be used by soldiers to turn gas mask on and off)
+	virtual void GasWarning( int warnlevel ) {};
 
 	// initialization functions
 	virtual void Spawn( void ) { return; }
@@ -446,7 +454,7 @@ public:
 	EOFFSET eoffset() { return OFFSET( pev ); };
 	int entindex() { return ENTINDEX( edict() ); };
 
-	virtual Vector Center() { return ( pev->absmax + pev->absmin ) * 0.5; }; // center point of entity
+	virtual Vector Center() { return ( pev->absmin + pev->absmax ) * 0.5; }; // center point of entity
 	virtual Vector EyePosition() { return pev->origin + pev->view_ofs; };			// position of eyes
 	virtual Vector EarPosition() { return pev->origin + pev->view_ofs; };			// position of ears
 	virtual Vector BodyTarget( const Vector &posSrc ) { return Center(); };		// position to shoot at
@@ -465,6 +473,14 @@ public:
 	int ammo_uranium;
 	int ammo_hornets;
 	int ammo_argrens;
+	// buz: Paranoia ammo types
+	int ammo_aps;
+	int ammo_barret;
+	int ammo_ak;
+	int ammo_asval;
+	int ammo_rpk;
+	int ammo_groza;
+
 	//Special stuff for grenades and satchels.
 	float m_flStartThrow;
 	float m_flReleaseThrow;
@@ -473,6 +489,8 @@ public:
 
 	enum EGON_FIRESTATE { FIRE_OFF, FIRE_CHARGE };
 	int m_fireState;
+
+	virtual void SendInitMessage( CBasePlayer *player ) {}; // buz - does nothing by default
 };
 
 //LRC- moved here from player.cpp. I'd put it in util.h with its friends, but it needs CBaseEntity to be declared.
@@ -602,6 +620,9 @@ public:
 	void SetBodygroup( int iGroup, int iValue );
 	int GetBodygroup( int iGroup );
 
+	// buz
+	float GetControllerBound( int iController );
+
 	//LRC
 	int GetBoneCount( void );
 	void SetBones( float (*data)[3], int datasize );
@@ -718,6 +739,8 @@ public:
 #define bits_CAP_MELEE_ATTACK1	( 1 << 13)// can do a melee attack 1
 #define bits_CAP_MELEE_ATTACK2	( 1 << 14)// can do a melee attack 2
 
+#define bits_CAP_CROUCH_COVER	( 1 << 16)// buz
+
 #define bits_CAP_FLY			( 1 << 15)// can fly, move all around
 
 #define bits_CAP_DOORS_GROUP    (bits_CAP_USE | bits_CAP_AUTO_DOORS | bits_CAP_OPEN_DOORS)
@@ -755,7 +778,7 @@ public:
 #define DMG_MORTAR			(1 << 23)	// Hit by air raid (done to distinguish grenade from mortar)
 
 // these are the damage types that are allowed to gib corpses
-#define DMG_GIB_CORPSE		( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB )
+#define DMG_GIB_CORPSE		( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC /* | DMG_CLUB */ ) // Wargon: DMG_CLUB не может гибать трупы.
 
 // these are the damage types that have client hud art
 #define DMG_SHOWNHUD		(DMG_POISON | DMG_ACID | DMG_FREEZE | DMG_SLOWFREEZE | DMG_DROWN | DMG_BURN | DMG_SLOWBURN | DMG_NERVEGAS | DMG_RADIATION | DMG_SHOCK)
@@ -858,6 +881,9 @@ public:
 	BYTE m_bUnlockedSound;	
 	BYTE m_bUnlockedSentence;
 	int m_sounds;
+
+	// Wargon: Переменная для скрытия иконки юза.
+	int m_hide_use;
 };
 
 //
@@ -923,7 +949,7 @@ typedef struct _SelAmmo
 } SelAmmo;
 
 //LRC- much as I hate to add new globals, I can't see how to read data from the World entity.
-extern BOOL g_startSuit;
+//extern BOOL g_startSuit;
 
 //LRC- moved here from alias.cpp so that util functions can use these defs.
 class CBaseAlias : public CPointEntity
