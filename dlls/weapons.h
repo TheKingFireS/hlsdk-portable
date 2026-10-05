@@ -103,9 +103,9 @@ public:
 
 // weapon clip/carry ammo capacities
 #define URANIUM_MAX_CARRY		100
-#define	_9MM_MAX_CARRY			250
+#define	_9MM_MAX_CARRY			120 // buz: used in paranoia
 #define _357_MAX_CARRY			36
-#define BUCKSHOT_MAX_CARRY		125
+#define BUCKSHOT_MAX_CARRY		125 // buz: used in paranoia
 #define BOLT_MAX_CARRY			50
 #define ROCKET_MAX_CARRY		5
 #define HANDGRENADE_MAX_CARRY	10
@@ -121,8 +121,8 @@ public:
 //#define CROWBAR_MAX_CLIP		WEAPON_NOCLIP
 #define GLOCK_MAX_CLIP			17
 #define PYTHON_MAX_CLIP			6
-#define MP5_MAX_CLIP			50
-#define SHOTGUN_MAX_CLIP		8
+#define MP5_MAX_CLIP			30 // buz: used in paranoia
+#define SHOTGUN_MAX_CLIP		8 // buz: used in paranoia
 #define CROSSBOW_MAX_CLIP		5
 #define RPG_MAX_CLIP			1
 #define GAUSS_MAX_CLIP			WEAPON_NOCLIP
@@ -136,10 +136,10 @@ public:
 // the default amount of ammo that comes with each gun when it spawns
 #define GLOCK_DEFAULT_GIVE			17
 #define PYTHON_DEFAULT_GIVE			6
-#define MP5_DEFAULT_GIVE			25
-#define MP5_DEFAULT_GIVE_MP			MP5_MAX_CLIP
+#define MP5_DEFAULT_GIVE			30 // buz: used in paranoia
+#define MP5_DEFAULT_GIVE_MP			MP5_MAX_CLIP // buz: used in paranoia
 #define MP5_M203_DEFAULT_GIVE		0
-#define SHOTGUN_DEFAULT_GIVE		12
+#define SHOTGUN_DEFAULT_GIVE		12 // buz: used in paranoia
 #define CROSSBOW_DEFAULT_GIVE		5
 #define RPG_DEFAULT_GIVE			1
 #define GAUSS_DEFAULT_GIVE			20
@@ -285,6 +285,9 @@ public:
 	static	TYPEDESCRIPTION m_SaveData[];
 
 	virtual void SetNextThink( float delay ); //LRC
+
+	void	WeaponDelay( int iAnim ); // buz
+	void	WeaponDelayTime( float time ); // buz
 
 	// generic weapon versions of CBasePlayerItem calls
 	virtual int AddToPlayer( CBasePlayer *pPlayer );

@@ -1350,7 +1350,7 @@ int SENTENCEG_PlayRndI( edict_t *entity, int isentenceg, float volume, float att
 
 // same as above, but takes sentence group name instead of index
 
-int SENTENCEG_PlayRndSz( edict_t *entity, const char *szgroupname, float volume, float attenuation, int flags, int pitch )
+int SENTENCEG_PlayRndSz( edict_t *entity, const char *szgroupname, float volume, float attenuation, int flags, int pitch, int channel )
 {
 	char name[64];
 	int ipick;
@@ -1370,7 +1370,7 @@ int SENTENCEG_PlayRndSz( edict_t *entity, const char *szgroupname, float volume,
 
 	ipick = USENTENCEG_Pick( isentenceg, name );
 	if( ipick >= 0 && name[0] )
-		EMIT_SOUND_DYN( entity, CHAN_VOICE, name, volume, attenuation, flags, pitch );
+		EMIT_SOUND_DYN( entity, (channel == -1) ? CHAN_VOICE : channel, name, volume, attenuation, flags, pitch );
 
 	return ipick;
 }
@@ -1574,12 +1574,21 @@ void EMIT_SOUND_DYN( edict_t *entity, int channel, const char *sample, float vol
 	{
 		char name[32];
 		if( SENTENCEG_Lookup( sample, name ) >= 0 )
+		{
 			EMIT_SOUND_DYN2( entity, channel, name, volume, attenuation, flags, pitch );
+			//ALERT(at_console, "play sentence %s, output %s\n", sample, name);
+		}
 		else
 			ALERT( at_aiconsole, "Unable to find %s in sentences.txt\n", sample );
+			// buz: send sencences as text messages to lookup subtitles in titles.txt
+			//UTIL_ShowMessageAll( sample );
+			UTIL_ShowMessagePVS( sample, entity->v.origin );
 	}
 	else
+	{
 		EMIT_SOUND_DYN2( entity, channel, sample, volume, attenuation, flags, pitch );
+		//ALERT(at_console, "play sound %s\n", sample);
+	}
 }
 
 // play a specific sentence over the HEV suit speaker - just pass player entity, and !sentencename
@@ -1645,7 +1654,7 @@ char TEXTURETYPE_Find( char *name )
 // returns volume of strike instrument (crowbar) to play
 //   (this is not used for footsteps, only attack sound effects. --LRC)
 
-float TEXTURETYPE_PlaySound( TraceResult *ptr,  Vector vecSrc, Vector vecEnd, int iBulletType )
+float TEXTURETYPE_PlaySound( TraceResult *ptr,  Vector vecSrc, Vector vecEnd, int iBulletType, char* chRetTexType )
 {
 	// hit the world, try to play sound based on texture material type
 	char chTextureType;
@@ -1705,6 +1714,10 @@ float TEXTURETYPE_PlaySound( TraceResult *ptr,  Vector vecSrc, Vector vecEnd, in
 		}
 	}
 
+	if (chRetTexType)
+	{
+		*chRetTexType = chTextureType;
+	}
 	switch( chTextureType )
 	{
 	default:
@@ -1762,7 +1775,16 @@ float TEXTURETYPE_PlaySound( TraceResult *ptr,  Vector vecSrc, Vector vecEnd, in
 		rgsz[3] = "player/pl_slosh4.wav";
 		cnt = 4;
 		break;
-	case CHAR_TEX_WOOD:
+	case CHAR_TEX_GRASS: // buz
+		fvol = 0.9;
+		fvolbar = 0.0;
+		rgsz[0] = "player/pl_grass1.wav";
+		rgsz[1] = "player/pl_grass3.wav";
+		rgsz[2] = "player/pl_grass2.wav";
+		rgsz[3] = "player/pl_grass4.wav";
+		cnt = 4;
+		break;
+	case CHAR_TEX_WOOD: case CHAR_TEX_WOODS: // buz
 		fvol = 0.9f;
 		fvolbar = 0.2f;
 		rgsz[0] = "debris/wood1.wav";

@@ -289,6 +289,7 @@ extern void			UTIL_ScreenShake		( const Vector &center, float amplitude, float f
 extern void			UTIL_ScreenShakeAll		( const Vector &center, float amplitude, float frequency, float duration );
 extern void			UTIL_ShowMessage		( const char *pString, CBaseEntity *pPlayer );
 extern void			UTIL_ShowMessageAll		( const char *pString );
+extern void			UTIL_ShowMessagePVS		( const char *pString, const Vector &org ); // buz
 extern void			UTIL_ScreenFadeAll		( const Vector &color, float fadeTime, float holdTime, int alpha, int flags );
 extern void			UTIL_ScreenFade			( CBaseEntity *pEntity, const Vector &color, float fadeTime, float fadeHold, int alpha, int flags );
 
@@ -326,6 +327,7 @@ extern int			UTIL_IsMasterTriggered	(string_t sMaster, CBaseEntity *pActivator);
 extern void			UTIL_BloodStream( const Vector &origin, const Vector &direction, int color, int amount );
 extern void			UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, int amount );
 extern Vector		UTIL_RandomBloodVector( void );
+extern void			UTIL_CustomDecal( TraceResult *pTrace, const char *name, int persistent = 0 ); // Wargon: Это должно быть объявлено здесь чтобы можно было рисовать кастомне декали из кода монстриков.
 extern BOOL			UTIL_ShouldShowBlood( int bloodColor );
 extern void			UTIL_BloodDecalTrace( TraceResult *pTrace, int bloodColor );
 extern void			UTIL_DecalTrace( TraceResult *pTrace, int decalNumber );
@@ -436,6 +438,7 @@ extern DLL_GLOBAL const Vector g_vecZero;
 #define AMBIENT_SOUND_LARGERADIUS		8
 #define AMBIENT_SOUND_START_SILENT		16
 #define AMBIENT_SOUND_NOT_LOOPING		32
+#define AMBIENT_SOUND_FROM_PLAYER		64
 
 #define SPEAKER_START_SILENT			1	// wait for trigger 'on' to start announcements
 
@@ -535,14 +538,14 @@ void USENTENCEG_InitLRU(unsigned char *plru, int count);
 void SENTENCEG_Init();
 void SENTENCEG_Stop(edict_t *entity, int isentenceg, int ipick);
 int SENTENCEG_PlayRndI(edict_t *entity, int isentenceg, float volume, float attenuation, int flags, int pitch);
-int SENTENCEG_PlayRndSz(edict_t *entity, const char *szrootname, float volume, float attenuation, int flags, int pitch);
+int SENTENCEG_PlayRndSz(edict_t *entity, const char *szrootname, float volume, float attenuation, int flags, int pitch, int channel = -1); // buz: added channel parameter
 int SENTENCEG_PlaySequentialSz(edict_t *entity, const char *szrootname, float volume, float attenuation, int flags, int pitch, int ipick, int freset);
 int SENTENCEG_GetIndex(const char *szrootname);
 int SENTENCEG_Lookup(const char *sample, char *sentencenum);
 
 void TEXTURETYPE_Init();
 char TEXTURETYPE_Find(char *name);
-float TEXTURETYPE_PlaySound(TraceResult *ptr,  Vector vecSrc, Vector vecEnd, int iBulletType);
+float TEXTURETYPE_PlaySound(TraceResult *ptr,  Vector vecSrc, Vector vecEnd, int iBulletType, char* chRetTexType = NULL);
 
 // NOTE: use EMIT_SOUND_DYN to set the pitch of a sound. Pitch of 100
 // is no pitch shift.  Pitch > 100 up to 255 is a higher pitch, pitch < 100

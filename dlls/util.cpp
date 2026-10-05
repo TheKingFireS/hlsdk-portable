@@ -897,6 +897,9 @@ void UTIL_EmitAmbientSound( edict_t *entity, const Vector &vecOrigin, const char
 		char name[32];
 		if( SENTENCEG_Lookup( samp, name ) >= 0 )
 			EMIT_AMBIENT_SOUND( entity, rgfl, name, vol, attenuation, fFlags, pitch );
+
+		// buz: send sencences as text messages to lookup subtitles in titles.txt
+		UTIL_ShowMessagePVS( samp, vecOrigin );
 	}
 	else
 		EMIT_AMBIENT_SOUND( entity, rgfl, samp, vol, attenuation, fFlags, pitch );
@@ -1198,6 +1201,24 @@ void UTIL_ShowMessageAll( const char *pString )
 	}
 }
 
+void UTIL_ShowMessagePVS( const char *pString, const Vector &org ) // buz
+{
+	int i;
+
+	// loop through all players
+	for ( i = 1; i <= gpGlobals->maxClients; i++ )
+	{
+		CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
+		if ( pPlayer && pPlayer->IsNetClient() )
+		{
+			//	MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, pEntity->edict() );
+			MESSAGE_BEGIN( MSG_PAS, gmsgHudText, org );
+			WRITE_STRING( pString );
+			MESSAGE_END();
+		}
+	}
+}
+
 // Overloaded to add IGNORE_GLASS
 void UTIL_TraceLine( const Vector &vecStart, const Vector &vecEnd, IGNORE_MONSTERS igmon, IGNORE_GLASS ignoreGlass, edict_t *pentIgnore, TraceResult *ptr )
 {
@@ -1491,14 +1512,50 @@ Vector UTIL_RandomBloodVector( void )
 	return direction;
 }
 
+// buz
+extern int gmsgCustomDecal;
+
+void UTIL_CustomDecal( TraceResult *pTrace, const char *name, int persistent /* =0 */ ) // Wargon: Значение по умолчанию прописано в util.h.
+{
+	if( pTrace->flFraction == 1.0 )
+		return;
+
+	if( pTrace->pHit )
+	{
+		int idx = ENTINDEX( pTrace->pHit );
+		//ALERT(at_console, "%d\n", idx);
+		if( idx )
+			return;
+	}
+
+	//ALERT(at_console, "sent\n");
+
+	MESSAGE_BEGIN( MSG_BROADCAST, gmsgCustomDecal );
+		WRITE_COORD( pTrace->vecEndPos.x );
+		WRITE_COORD( pTrace->vecEndPos.y );
+		WRITE_COORD( pTrace->vecEndPos.z );
+		WRITE_COORD( pTrace->vecPlaneNormal.x );
+		WRITE_COORD( pTrace->vecPlaneNormal.y );
+		WRITE_COORD( pTrace->vecPlaneNormal.z );
+		WRITE_BYTE( persistent );
+		WRITE_STRING( name );
+	MESSAGE_END();
+}
+
 void UTIL_BloodDecalTrace( TraceResult *pTrace, int bloodColor )
 {
 	if( UTIL_ShouldShowBlood( bloodColor ) )
 	{
 		if( bloodColor == BLOOD_COLOR_RED )
+		{
 			UTIL_DecalTrace( pTrace, DECAL_BLOOD1 + RANDOM_LONG( 0, 5 ) );
+			UTIL_CustomDecal( pTrace, "redblood" );
+		}
 		else
+		{
 			UTIL_DecalTrace( pTrace, DECAL_YBLOOD1 + RANDOM_LONG( 0, 5 ) );
+			UTIL_CustomDecal( pTrace, "yellowblood" );
+		}
 	}
 }
 
@@ -1518,6 +1575,12 @@ void UTIL_DecalTrace( TraceResult *pTrace, int decalNumber )
 
 	if( pTrace->flFraction == 1.0f )
 		return;
+
+	// buz: also paint custom decal
+	if (decalNumber == DECAL_SCORCH1 || decalNumber == DECAL_SCORCH2)
+	{
+		UTIL_CustomDecal( pTrace, "scorch" );
+	}
 
 	// Only decal BSP models
 	if( pTrace->pHit )

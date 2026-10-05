@@ -4569,3 +4569,77 @@ void CParticle::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 		//ALERT(at_console, "Setting body %d\n", pev->body);
 	}
 }
+
+// =================================
+// buz: static decals
+//
+// netname - decal group name
+// skin - direction specified
+// =================================
+extern int gmsgCustomDecal;
+
+class CStaticDecal : public CPointEntity
+{
+public:
+	void Spawn()
+	{
+		pev->solid = SOLID_NOT;
+		pev->movetype = MOVETYPE_NONE;
+		pev->effects |= EF_NODRAW;
+	}
+
+	int PasteDecal( int dir, CBasePlayer *player )
+	{
+		Vector vecdir(0,0,0);
+		vecdir[dir/2] = (dir & 1) ? 10 : -10;
+
+		TraceResult tr;
+		UTIL_TraceLine ( pev->origin, pev->origin + vecdir, ignore_monsters, ENT(pev), &tr);
+
+		if (tr.flFraction == 1.0)
+			return FALSE;
+
+		if (tr.pHit)
+		{
+			int idx = ENTINDEX(tr.pHit);
+			if (idx)
+				return FALSE;
+		}
+
+		MESSAGE_BEGIN( MSG_ONE, gmsgCustomDecal, NULL, player->pev );
+			WRITE_COORD( tr.vecEndPos.x );
+			WRITE_COORD( tr.vecEndPos.y );
+			WRITE_COORD( tr.vecEndPos.z );
+			WRITE_COORD( tr.vecPlaneNormal.x );
+			WRITE_COORD( tr.vecPlaneNormal.y );
+			WRITE_COORD( tr.vecPlaneNormal.z );
+			WRITE_BYTE( 1 );
+			WRITE_STRING( STRING(pev->netname) );
+		MESSAGE_END();
+		return TRUE;
+	}
+
+	void SendInitMessage( CBasePlayer *player )
+	{
+		if (pev->skin)
+		{
+			if (pev->skin > 6)
+			{
+				ALERT(at_console, "Invalid dir value in static decal entity!\n");
+				return;
+			}
+
+			PasteDecal( pev->skin - 1, player );
+			return;
+		}
+
+		// try all directions
+		for (int i = 0; i < 6; i++)
+		{
+			if (PasteDecal(i, player))
+				return;
+		}
+	}
+};
+
+LINK_ENTITY_TO_CLASS( env_static_decal, CStaticDecal );

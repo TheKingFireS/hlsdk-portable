@@ -924,6 +924,32 @@ void ClientPrecache( void )
 	PRECACHE_SOUND( "debris/wood2.wav" );
 	PRECACHE_SOUND( "debris/wood3.wav" );
 
+	// buz: paranoia step sounds
+	PRECACHE_SOUND("player/pl_wood_scr1.wav");
+	PRECACHE_SOUND("player/pl_wood_scr2.wav");
+	PRECACHE_SOUND("player/pl_wood_scr3.wav");
+	PRECACHE_SOUND("player/pl_wood_scr4.wav");
+
+	PRECACHE_SOUND("player/pl_wood1.wav");
+	PRECACHE_SOUND("player/pl_wood2.wav");
+	PRECACHE_SOUND("player/pl_wood3.wav");
+	PRECACHE_SOUND("player/pl_wood4.wav");
+
+	PRECACHE_SOUND("player/pl_asf1.wav");
+	PRECACHE_SOUND("player/pl_asf2.wav");
+	PRECACHE_SOUND("player/pl_asf3.wav");
+	PRECACHE_SOUND("player/pl_asf4.wav");
+
+	PRECACHE_SOUND("player/pl_beton1.wav");
+	PRECACHE_SOUND("player/pl_beton2.wav");
+	PRECACHE_SOUND("player/pl_beton3.wav");
+	PRECACHE_SOUND("player/pl_beton4.wav");
+
+	PRECACHE_SOUND("player/pl_grass1.wav");
+	PRECACHE_SOUND("player/pl_grass2.wav");
+	PRECACHE_SOUND("player/pl_grass3.wav");
+	PRECACHE_SOUND("player/pl_grass4.wav");
+
 	PRECACHE_SOUND( "plats/train_use1.wav" );		// use a train
 
 	PRECACHE_SOUND( "plats/vehicle_ignition.wav" );
