@@ -97,7 +97,7 @@ set (SVDLL_SOURCES
 	hornetgun.cpp
 	houndeye.cpp
 	ichthyosaur.cpp
-	islave_deamon.cpp
+	#islave_deamon.cpp
 	items.cpp
 	leech.cpp
 	lights.cpp
@@ -120,7 +120,7 @@ set (SVDLL_SOURCES
 	player.cpp
 	playermonster.cpp
 	python.cpp
-	rat.cpp
+	#rat.cpp
 	roach.cpp
 	rpg.cpp
 	satchel.cpp
