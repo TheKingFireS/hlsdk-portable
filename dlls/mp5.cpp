@@ -13,6 +13,13 @@
 *
 ****/
 
+/***
+
+	Written by BUzer for half-life: Paranoia modification
+	based on valve's mp5 code
+
+***/
+
 #include "extdll.h"
 #include "util.h"
 #include "cbase.h"
@@ -22,6 +29,8 @@
 #include "player.h"
 #include "soundent.h"
 #include "gamerules.h"
+
+#include "paranoia_wpn.h"
 
 enum mp5_e
 {
@@ -70,7 +79,7 @@ void CMP5::Precache( void )
 	PRECACHE_MODEL( "models/w_9mmAR.mdl" );
 	PRECACHE_MODEL( "models/p_9mmAR.mdl" );
 
-	m_iShell = PRECACHE_MODEL( "models/shell.mdl" );// brass shellTE_MODEL
+	m_iShell = PRECACHE_MODEL( "models/mp5_shell.mdl" );// brass shellTE_MODEL
 
 	PRECACHE_MODEL( "models/grenade.mdl" );	// grenade
 
@@ -90,7 +99,9 @@ void CMP5::Precache( void )
 	PRECACHE_SOUND( "weapons/357_cock1.wav" );
 
 	m_usMP5 = PRECACHE_EVENT( 1, "events/mp5.sc" );
-	m_usMP52 = PRECACHE_EVENT( 1, "events/mp52.sc" );
+	//m_usMP52 = PRECACHE_EVENT( 1, "events/mp52.sc" );
+
+	m_flTimeWeaponIdle = 0; // fix to resend idle animation
 }
 
 int CMP5::GetItemInfo( ItemInfo *p )
@@ -102,7 +113,7 @@ int CMP5::GetItemInfo( ItemInfo *p )
 	p->iMaxAmmo2 = M203_GRENADE_MAX_CARRY;
 	p->iMaxClip = MP5_MAX_CLIP;
 	p->iSlot = 2;
-	p->iPosition = 0;
+	p->iPosition = 2;
 	p->iFlags = 0;
 	p->iId = m_iId = WEAPON_MP5;
 	p->iWeight = MP5_WEIGHT;
@@ -282,12 +293,14 @@ class CMP5AmmoClip : public CBasePlayerAmmo
 	void Spawn( void )
 	{
 		Precache();
-		SET_MODEL( ENT( pev ), "models/w_9mmARclip.mdl" );
+		//SET_MODEL( ENT( pev ), "models/w_9mmARclip.mdl" );
+		SET_MODEL( ENT( pev ), "models/w_mp5ammo.mdl" );
 		CBasePlayerAmmo::Spawn();
 	}
 	void Precache( void )
 	{
-		PRECACHE_MODEL( "models/w_9mmARclip.mdl" );
+		//PRECACHE_MODEL( "models/w_9mmARclip.mdl" );
+		PRECACHE_MODEL( "models/w_mp5ammo.mdl" );
 		PRECACHE_SOUND( "items/9mmclip1.wav" );
 	}
 	BOOL AddAmmo( CBaseEntity *pOther ) 
@@ -309,12 +322,14 @@ class CMP5Chainammo : public CBasePlayerAmmo
 	void Spawn( void )
 	{ 
 		Precache();
-		SET_MODEL( ENT( pev ), "models/w_chainammo.mdl" );
+		//SET_MODEL( ENT( pev ), "models/w_chainammo.mdl" );
+		SET_MODEL( ENT( pev ), "models/w_mp5ammobox.mdl" );
 		CBasePlayerAmmo::Spawn();
 	}
 	void Precache( void )
 	{
-		PRECACHE_MODEL( "models/w_chainammo.mdl" );
+		//PRECACHE_MODEL( "models/w_chainammo.mdl" );
+		PRECACHE_MODEL( "models/w_mp5ammobox.mdl" );
 		PRECACHE_SOUND( "items/9mmclip1.wav" );
 	}
 	BOOL AddAmmo( CBaseEntity *pOther ) 
