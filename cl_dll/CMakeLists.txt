@@ -146,6 +146,10 @@ list(APPEND CLDLL_SOURCES
 	../game_shared/voice_banmgr.cpp
 )
 
+# Build the legacy Cg symbol shim into client.dll. Waf's client source glob
+# already picks up cg_compat.cpp; this include keeps CMake builds in sync.
+include(CgCompat.cmake)
+
 if (HAVE_STRLCPY)
 	add_definitions(-DHAVE_STRLCPY)
 else()
@@ -165,7 +169,6 @@ include_directories (. hl/ ../dlls ../dlls/wpn_shared ../common ../engine ../pm_
 if (GOLDSOURCE_SUPPORT)
 	include_directories (../external/)
 endif()
-
 
 include_directories(../utils/vgui/include)
 
