@@ -14,6 +14,7 @@ CGbool cgGLIsProgramLoaded(CGprogram program);
 void cgGLBindProgram(CGprogram program);
 void cgGLUnbindProgram(CGprofile profile);
 void cgGLSetParameter1f(CGparameter parameter, float x);
+void cgGLSetParameter4f(CGparameter parameter, float x, float y, float z, float w);
 void cgGLSetParameter4fv(CGparameter parameter, const float *values);
 void cgGLSetStateMatrixParameter(CGparameter parameter, int matrix, int transform);
 #ifdef __cplusplus

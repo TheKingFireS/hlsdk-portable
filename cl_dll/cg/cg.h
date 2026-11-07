@@ -1,8 +1,5 @@
 #ifndef HLSDK_CG_COMPAT_CG_H
 #define HLSDK_CG_COMPAT_CG_H
-
-/* Source-compatibility subset for legacy Cg 1.2 mods.
- * This is not NVIDIA's Cg ABI and does not compile Cg shader source. */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,6 +58,7 @@ const char *cgGetLastErrorString(CGerror *error);
 CGparameter cgGetNamedParameter(CGprogram program, const char *name);
 void cgDestroyParameter(CGparameter parameter);
 void cgSetParameter1f(CGparameter parameter, float x);
+void cgSetParameter4f(CGparameter parameter, float x, float y, float z, float w);
 void cgSetParameter4fv(CGparameter parameter, const float *values);
 
 #ifdef __cplusplus
