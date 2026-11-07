@@ -121,6 +121,8 @@ set (CLDLL_SOURCES
 	util.cpp
 	view.cpp
 	../public/safe_snprintf.c
+	# Legacy Cg symbols are compiled into client.dll; no cg/cggl runtime DLLs.
+	cg_compat.cpp
 )
 
 list(APPEND CLDLL_SOURCES
@@ -145,10 +147,6 @@ list(APPEND CLDLL_SOURCES
 	../game_shared/vgui_slider2.cpp
 	../game_shared/voice_banmgr.cpp
 )
-
-# Build the legacy Cg symbol shim into client.dll. Waf's client source glob
-# already picks up cg_compat.cpp; this include keeps CMake builds in sync.
-include(CgCompat.cmake)
 
 if (HAVE_STRLCPY)
 	add_definitions(-DHAVE_STRLCPY)
