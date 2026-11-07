@@ -6,14 +6,11 @@ extern "C" {
 
 typedef int CGbool;
 typedef int CGenum;
-typedef int CGtype;
 typedef int CGprofile;
 typedef int CGerror;
-typedef int CGresource;
 typedef struct _CGcontext *CGcontext;
 typedef struct _CGprogram *CGprogram;
 typedef struct _CGparameter *CGparameter;
-typedef void (*CGerrorCallbackFunc)(void);
 
 #define CG_FALSE 0
 #define CG_TRUE 1
@@ -29,13 +26,8 @@ typedef void (*CGerrorCallbackFunc)(void);
 #define CG_INVALID_PROGRAM_ERROR 3
 #define CG_INVALID_PARAMETER_ERROR 4
 #define CG_UNKNOWN_ERROR 999
-#define CG_UNKNOWN_TYPE 0
 #define CG_GL_VERTEX 8
 #define CG_GL_FRAGMENT 9
-#define CG_GL_MATRIX_IDENTITY 0
-#define CG_GL_MATRIX_TRANSPOSE 1
-#define CG_GL_MATRIX_INVERSE 2
-#define CG_GL_MATRIX_INVERSE_TRANSPOSE 3
 #define CG_GL_MODELVIEW_MATRIX 4
 #define CG_GL_PROJECTION_MATRIX 5
 #define CG_GL_TEXTURE_MATRIX 6

@@ -1,14 +1,20 @@
 #version 120
-varying vec2 vTex0;
-varying vec2 vTex1;
-varying vec2 vTex2;
-varying vec2 vTex3;
+precision mediump float;
+
+uniform mat4 ModelViewProj;
 uniform float flScreen;
-void main() {
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-    vec4 uv = gl_MultiTexCoord0;
-    vTex0 = uv.xy;
-    vTex1 = uv.xy;
-    vTex2 = uv.xy + vec2(0.0, flScreen);
-    vTex3 = uv.xy;
+
+varying vec4 vTexCoord0;
+varying vec4 vTexCoord1;
+varying vec4 vTexCoord2;
+varying vec4 vTexCoord3;
+
+void main()
+{
+    gl_Position = ModelViewProj * gl_Vertex;
+    vTexCoord0 = gl_MultiTexCoord0;
+    vTexCoord1 = gl_MultiTexCoord0;
+    vTexCoord2 = gl_MultiTexCoord0;
+    vTexCoord2.y = gl_MultiTexCoord0.y + flScreen;
+    vTexCoord3 = gl_MultiTexCoord0;
 }

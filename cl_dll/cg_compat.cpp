@@ -1,17 +1,9 @@
 #include "cg/cg.h"
 #include "cg/cgGL.h"
 
-#if defined(_WIN32)
-#include <windows.h>
-#endif
-
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#else
 #include <GL/gl.h>
-#endif
-
-#include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -19,24 +11,22 @@
 
 struct _CGcontext {
     CGerror error;
-    char listing[256];
+    char listing[512];
 };
 
 struct _CGparameter {
     char name[96];
     GLint location;
     float value[16];
-    int isMatrix;
+    bool is_matrix;
 };
 
 struct _CGprogram {
     CGcontext context;
     CGprofile profile;
-    int compiled;
-    GLuint glProgram;
-    GLuint glShader;
+    bool compiled;
+    GLuint gl_program;
     std::vector<_CGparameter *> params;
-    std::string source;
 };
 
 static CGerror g_error = CG_NO_ERROR;
@@ -45,42 +35,93 @@ static char g_error_text[256] = "No error";
 static void fail(CGcontext ctx, CGerror error, const char *text)
 {
     g_error = error;
-    strncpy(g_error_text, text, sizeof(g_error_text) - 1);
-    g_error_text[sizeof(g_error_text) - 1] = '\0';
+    if (text) {
+        std::strncpy(g_error_text, text, sizeof(g_error_text) - 1);
+        g_error_text[sizeof(g_error_text) - 1] = '\0';
+    }
     if (ctx) {
         ctx->error = error;
-        strncpy(ctx->listing, text, sizeof(ctx->listing) - 1);
-        ctx->listing[sizeof(ctx->listing) - 1] = '\0';
+        if (text) {
+            std::strncpy(ctx->listing, text, sizeof(ctx->listing) - 1);
+            ctx->listing[sizeof(ctx->listing) - 1] = '\0';
+        }
     }
 }
 
-static std::string ReadTextFile(const char *path)
+static std::string read_file(const char *path)
 {
-    std::ifstream in(path, std::ios::in | std::ios::binary);
+    std::ifstream in(path, std::ios::binary);
     if (!in.is_open())
         return std::string();
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    return buffer.str();
+    std::ostringstream buf;
+    buf << in.rdbuf();
+    return buf.str();
 }
 
-static std::string StripPath(const std::string &path)
+static std::string replace_all(std::string s, const std::string &from, const std::string &to)
 {
-    size_t slash = path.find_last_of("/\\");
-    if (slash == std::string::npos)
-        return path;
-    return path.substr(slash + 1);
+    std::string::size_type pos = 0;
+    while ((pos = s.find(from, pos)) != std::string::npos) {
+        s.replace(pos, from.length(), to);
+        pos += to.length();
+    }
+    return s;
 }
 
-static std::string TranslateBuiltInShader(const std::string &shaderPath, const std::string &source,
-                                          bool fragment)
+static std::string translate_legacy_cg(const std::string &path, const std::string &source, CGprofile profile)
 {
-    std::string name = StripPath(shaderPath);
-    const char *txt = source.c_str();
-    (void)txt;
-
     std::string out = "#version 120\n";
     out += "precision mediump float;\n";
+
+    std::string name = path;
+    const size_t slash = name.find_last_of("/\\");
+    if (slash != std::string::npos)
+        name = name.substr(slash + 1);
+
+    std::string s = source;
+    s = replace_all(s, "float4", "vec4");
+    s = replace_all(s, "float3", "vec3");
+    s = replace_all(s, "float2", "vec2");
+    s = replace_all(s, "float1", "float");
+    s = replace_all(s, "uniform samplerRECT", "uniform sampler2D");
+    s = replace_all(s, "texRECT", "texture2D");
+    s = replace_all(s, "tex2D", "texture2D");
+    s = replace_all(s, "offsettex2D", "texture2D");
+    s = replace_all(s, "uniform float4x4", "uniform mat4");
+    s = replace_all(s, "uniform float4", "uniform vec4");
+    s = replace_all(s, "uniform float3", "uniform vec3");
+    s = replace_all(s, "uniform float2", "uniform vec2");
+    s = replace_all(s, "in float4", "vec4");
+    s = replace_all(s, "in float3", "vec3");
+    s = replace_all(s, "in float2", "vec2");
+    s = replace_all(s, ": POSITION", "");
+    s = replace_all(s, ": TEXCOORD0", "");
+    s = replace_all(s, ": TEXCOORD1", "");
+    s = replace_all(s, ": TEXCOORD2", "");
+    s = replace_all(s, ": TEXCOORD3", "");
+    s = replace_all(s, ": COLOR", "");
+    s = replace_all(s, "main( in ", "main( ");
+    s = replace_all(s, "main(VertIn_s IN", "main()");
+    s = replace_all(s, "main( in VertIn_s IN", "main()");
+    s = replace_all(s, "FragOut_s main", "void main");
+    s = replace_all(s, "VertOut_s main", "void main");
+    s = replace_all(s, "OUT.flColor.rgb", "gl_FragColor.rgb");
+    s = replace_all(s, "OUT.flColor =", "gl_FragColor =");
+    s = replace_all(s, "OUT.flPos =", "gl_Position =");
+    s = replace_all(s, "OUT.flTexCoord0", "vTexCoord0");
+    s = replace_all(s, "OUT.flTexCoord1", "vTexCoord1");
+    s = replace_all(s, "OUT.flTexCoord2", "vTexCoord2");
+    s = replace_all(s, "OUT.flTexCoord3", "vTexCoord3");
+    s = replace_all(s, "IN.flTexCoord0", "vTexCoord0");
+    s = replace_all(s, "IN.flTexCoord1", "vTexCoord1");
+    s = replace_all(s, "IN.flTexCoord2", "vTexCoord2");
+    s = replace_all(s, "IN.flTexCoord3", "vTexCoord3");
+    s = replace_all(s, "IN.flPos", "gl_Vertex");
+    s = replace_all(s, "mul( ModelViewProj, flPos )", "ModelViewProj * flPos");
+    s = replace_all(s, "mul(ModelViewProj, vin.pos)", "ModelViewProj * vin.pos");
+    s = replace_all(s, "float4x4 ModelViewProj", "mat4 ModelViewProj");
+    s = replace_all(s, "uniform float4x4 ModelViewProj", "uniform mat4 ModelViewProj");
+    s = replace_all(s, "varying vec4 vTexCoord0;", "varying vec4 vTexCoord0;\n varying vec4 vTexCoord1;\n varying vec4 vTexCoord2;\n varying vec4 vTexCoord3;\n");
 
     if (name == "water_vp.cg" || name == "black_vp.cg") {
         out += "uniform mat4 ModelViewProj;\n";
@@ -90,14 +131,12 @@ static std::string TranslateBuiltInShader(const std::string &shaderPath, const s
         out += "varying vec4 vTexCoord2;\n";
         out += "varying vec4 vTexCoord3;\n";
         out += "void main() {\n";
-        out += "    vec4 flPos = gl_Vertex;\n";
-        out += "    vec4 flTexCoord0 = gl_MultiTexCoord0;\n";
-        out += "    vTexCoord0 = flTexCoord0;\n";
-        out += "    vTexCoord1 = flTexCoord0;\n";
-        out += "    vTexCoord2 = flTexCoord0;\n";
-        out += "    vTexCoord2.y = flTexCoord0.y + flScreen;\n";
-        out += "    vTexCoord3 = flTexCoord0;\n";
-        out += "    gl_Position = ModelViewProj * flPos;\n";
+        out += "  vTexCoord0 = gl_MultiTexCoord0;\n";
+        out += "  vTexCoord1 = gl_MultiTexCoord0;\n";
+        out += "  vTexCoord2 = gl_MultiTexCoord0;\n";
+        out += "  vTexCoord2.y = gl_MultiTexCoord0.y + flScreen;\n";
+        out += "  vTexCoord3 = gl_MultiTexCoord0;\n";
+        out += "  gl_Position = ModelViewProj * gl_Vertex;\n";
         out += "}\n";
         return out;
     }
@@ -113,158 +152,93 @@ static std::string TranslateBuiltInShader(const std::string &shaderPath, const s
         out += "varying vec4 vTexCoord2;\n";
         out += "varying vec4 vTexCoord3;\n";
         out += "void main() {\n";
-        out += "    vec4 flColor = texture2D(OffsetTex, vTexCoord0.xy);\n";
-        if (name == "water_fp.cg") {
-            out += "    vec2 flTex = vTexCoord1.xy + TexOffset.xy * flColor.xx + TexOffset.zw * flColor.yy;\n";
-            out += "    vec4 col = texture2D(DecalTex, flTex.xy);\n";
-            out += "    float flMask = texture2D(MaskTex, vTexCoord3.xy).r;\n";
-            out += "    col.a = 1.0;\n";
-            out += "    gl_FragColor = col * flMask;\n";
-        } else {
-            out += "    vec4 flPrevLookup = texture2D(Identity, flColor.gb);\n";
-            out += "    vec4 col = texture2D(DecalTex, vTexCoord2.xy + (flPrevLookup.xy * TexOffset.xy));\n";
-            out += "    float flMask = texture2D(MaskTex, vTexCoord3.xy).r;\n";
-            out += "    col.a = 1.0;\n";
-            out += "    gl_FragColor = col * flMask;\n";
-        }
+        out += "  vec4 flColor = texture2D(OffsetTex, vTexCoord0.xy);\n";
+        out += "  vec4 col = texture2D(DecalTex, (vTexCoord1.xy + TexOffset.xy * flColor.xx + TexOffset.zw * flColor.yy));\n";
+        out += "  float flMask = texture2D(MaskTex, vTexCoord3.xy).r;\n";
+        out += "  col.a = 1.0;\n";
+        out += "  gl_FragColor = col * flMask;\n";
         out += "}\n";
         return out;
     }
 
-    if (fragment) {
+    if (profile == CG_PROFILE_FP20 || profile == CG_PROFILE_ARBFP1) {
         out += "void main() { gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); }\n";
         return out;
     }
 
-    out += "void main() { gl_Position = vec4(0.0); }\n";
-    return out;
+    if (profile == CG_PROFILE_VP20 || profile == CG_PROFILE_ARBVP1) {
+        out += "void main() { gl_Position = gl_Vertex; }\n";
+        return out;
+    }
+
+    return out + s;
 }
 
-static std::string TranslateCgSource(const std::string &shaderPath, const std::string &source, CGprofile profile)
+static bool compile_glsl_program(_CGprogram *program, const std::string &source, bool fragment)
 {
-    const bool fragment = (profile == CG_PROFILE_FP20 || profile == CG_PROFILE_ARBFP1 || profile == CG_PROFILE_UNKNOWN);
-    std::string known = TranslateBuiltInShader(shaderPath, source, fragment);
-    if (!known.empty())
-        return known;
-
-    std::string translated = source;
-    std::string f1 = "float4"; std::string r1 = "vec4";
-    std::string f2 = "float3"; std::string r2 = "vec3";
-    std::string f3 = "float2"; std::string r3 = "vec2";
-    std::string f4 = "float";  std::string r4 = "float";
-    std::string::size_type pos = 0;
-    while ((pos = translated.find(f1, pos)) != std::string::npos) {
-        translated.replace(pos, f1.size(), r1); pos += r1.size();
-    }
-    while ((pos = translated.find(f2, pos)) != std::string::npos) {
-        translated.replace(pos, f2.size(), r2); pos += r2.size();
-    }
-    while ((pos = translated.find(f3, pos)) != std::string::npos) {
-        translated.replace(pos, f3.size(), r3); pos += r3.size();
-    }
-    while ((pos = translated.find(f4, pos)) != std::string::npos) {
-        translated.replace(pos, f4.size(), r4); pos += r4.size();
-    }
-    std::string replacements[] = {
-        ": POSITION", "",
-        ": TEXCOORD0", "",
-        ": TEXCOORD1", "",
-        ": TEXCOORD2", "",
-        ": TEXCOORD3", "",
-        ": COLOR", "",
-        "uniform samplerRECT", "uniform sampler2D",
-        "texRECT", "texture2D",
-        "tex2D", "texture2D",
-        "offsettex2D", "texture2D",
-        "in float4", "vec4",
-        "in float3", "vec3",
-        "in float2", "vec2",
-        "in uniform", "uniform",
-        "uniform float4x4", "uniform mat4",
-        "uniform float4", "uniform vec4",
-        "uniform float3", "uniform vec3",
-        "uniform float2", "uniform vec2",
-        "struct VertOut_s {", "varying vec4 vTexCoord0;\n varying vec4 vTexCoord1;\n varying vec4 vTexCoord2;\n varying vec4 vTexCoord3;\n struct VertOut_s {",
-        "struct FragOut_s {", "struct FragOut_s {"
-    };
-    for (size_t i = 0; i < sizeof(replacements) / sizeof(replacements[0]); i += 2) {
-        std::string::size_type p = 0;
-        while ((p = translated.find(replacements[i], p)) != std::string::npos)
-            translated.replace(p, replacements[i].size(), replacements[i + 1]);
-    }
-    return translated;
-}
-
-static bool CompileGLSLProgram(_CGprogram *program, const std::string &source, bool fragment)
-{
-    const char *str = source.c_str();
     GLuint shader = glCreateShader(fragment ? GL_FRAGMENT_SHADER : GL_VERTEX_SHADER);
     if (!shader) {
-        fail(program ? program->context : NULL, CG_COMPILER_ERROR, "Cg compatibility: could not create GLSL shader object");
+        fail(program ? program->context : NULL, CG_COMPILER_ERROR, "Could not create GLSL shader object");
         return false;
     }
 
-    glShaderSource(shader, 1, &str, NULL);
+    const char *src = source.c_str();
+    glShaderSource(shader, 1, &src, NULL);
     glCompileShader(shader);
 
-    GLint status = GL_FALSE;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if (status == GL_FALSE) {
-        char log[1024] = {0};
+    GLint compiled = GL_FALSE;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    if (compiled == GL_FALSE) {
+        char log[1024];
         GLsizei len = 0;
         glGetShaderInfoLog(shader, sizeof(log), &len, log);
         if (program && program->context)
-            strncpy(program->context->listing, log, sizeof(program->context->listing) - 1);
-        fail(program ? program->context : NULL, CG_COMPILER_ERROR, log[0] ? log : "Cg compatibility: GLSL compile failed");
+            std::strncpy(program->context->listing, log, sizeof(program->context->listing) - 1);
+        fail(program ? program->context : NULL, CG_COMPILER_ERROR, log[0] ? log : "GLSL compile failed");
         glDeleteShader(shader);
         return false;
     }
 
-    GLuint glProgram = glCreateProgram();
-    if (!glProgram) {
+    GLuint prog = glCreateProgram();
+    if (!prog) {
         glDeleteShader(shader);
-        fail(program ? program->context : NULL, CG_COMPILER_ERROR, "Cg compatibility: could not create GLSL program object");
+        fail(program ? program->context : NULL, CG_COMPILER_ERROR, "Could not create GLSL program object");
         return false;
     }
 
-    glAttachShader(glProgram, shader);
-    glLinkProgram(glProgram);
+    glAttachShader(prog, shader);
+    glLinkProgram(prog);
     glDeleteShader(shader);
 
-    glGetProgramiv(glProgram, GL_LINK_STATUS, &status);
-    if (status == GL_FALSE) {
-        char log[1024] = {0};
+    GLint linked = GL_FALSE;
+    glGetProgramiv(prog, GL_LINK_STATUS, &linked);
+    if (linked == GL_FALSE) {
+        char log[1024];
         GLsizei len = 0;
-        glGetProgramInfoLog(glProgram, sizeof(log), &len, log);
+        glGetProgramInfoLog(prog, sizeof(log), &len, log);
         if (program && program->context)
-            strncpy(program->context->listing, log, sizeof(program->context->listing) - 1);
-        fail(program ? program->context : NULL, CG_COMPILER_ERROR, log[0] ? log : "Cg compatibility: GLSL link failed");
-        glDeleteProgram(glProgram);
+            std::strncpy(program->context->listing, log, sizeof(program->context->listing) - 1);
+        fail(program ? program->context : NULL, CG_COMPILER_ERROR, log[0] ? log : "GLSL link failed");
+        glDeleteProgram(prog);
         return false;
     }
 
-    program->glShader = shader;
-    program->glProgram = glProgram;
-    program->compiled = 1;
+    program->gl_program = prog;
+    program->compiled = true;
     return true;
 }
 
 CGcontext cgCreateContext(void)
 {
-    CGcontext ctx = (CGcontext)calloc(1, sizeof(*ctx));
-    if (!ctx) {
+    CGcontext ctx = (CGcontext)std::calloc(1, sizeof(*ctx));
+    if (!ctx)
         fail(NULL, CG_UNKNOWN_ERROR, "Cg compatibility: out of memory");
-        return NULL;
-    }
-    ctx->error = CG_NO_ERROR;
-    snprintf(ctx->listing, sizeof(ctx->listing), "No error");
     return ctx;
 }
 
 void cgDestroyContext(CGcontext ctx)
 {
-    if (!ctx) return;
-    free(ctx);
+    std::free(ctx);
 }
 
 CGbool cgIsContext(CGcontext ctx)
@@ -277,55 +251,57 @@ const char *cgGetLastListing(CGcontext ctx)
     return ctx ? ctx->listing : g_error_text;
 }
 
-CGprogram cgCreateProgramFromFile(CGcontext ctx, CGenum program_type, const char *program_file, CGprofile profile, const char *entry, const char **args)
+CGprogram cgCreateProgramFromFile(CGcontext ctx, CGenum type, const char *file, CGprofile profile, const char *entry, const char **args)
 {
-    (void)program_type; (void)entry; (void)args;
-    if (!program_file || !*program_file) {
+    (void)type; (void)entry; (void)args;
+    if (!file || !*file) {
         fail(ctx, CG_INVALID_PROGRAM_ERROR, "Cg compatibility: missing shader file");
         return NULL;
     }
 
-    std::string file = ReadTextFile(program_file);
-    if (file.empty()) {
+    std::string source = read_file(file);
+    if (source.empty()) {
         fail(ctx, CG_INVALID_PROGRAM_ERROR, "Cg compatibility: failed to read shader file");
         return NULL;
     }
 
-    _CGprogram *program = (_CGprogram *)calloc(1, sizeof(*program));
+    _CGprogram *program = (_CGprogram *)std::calloc(1, sizeof(*program));
     if (!program) {
         fail(ctx, CG_UNKNOWN_ERROR, "Cg compatibility: out of memory");
         return NULL;
     }
+
     program->context = ctx;
     program->profile = profile;
-    program->source = TranslateCgSource(program_file, file, profile);
+    std::string translated = translate_legacy_cg(file, source, profile);
     const bool fragment = (profile == CG_PROFILE_FP20 || profile == CG_PROFILE_ARBFP1 || profile == CG_PROFILE_UNKNOWN);
-    if (!CompileGLSLProgram(program, program->source, fragment)) {
-        free(program);
+    if (!compile_glsl_program(program, translated, fragment)) {
+        std::free(program);
         return NULL;
     }
     return program;
 }
 
-CGprogram cgCreateProgram(CGcontext ctx, CGenum program_type, const char *program_source, CGprofile profile, const char *entry, const char **args)
+CGprogram cgCreateProgram(CGcontext ctx, CGenum type, const char *source, CGprofile profile, const char *entry, const char **args)
 {
-    (void)program_type; (void)entry; (void)args;
-    if (!program_source || !*program_source) {
+    (void)type; (void)entry; (void)args;
+    if (!source || !*source) {
         fail(ctx, CG_INVALID_PROGRAM_ERROR, "Cg compatibility: missing shader source");
         return NULL;
     }
 
-    _CGprogram *program = (_CGprogram *)calloc(1, sizeof(*program));
+    _CGprogram *program = (_CGprogram *)std::calloc(1, sizeof(*program));
     if (!program) {
         fail(ctx, CG_UNKNOWN_ERROR, "Cg compatibility: out of memory");
         return NULL;
     }
+
     program->context = ctx;
     program->profile = profile;
-    program->source = TranslateCgSource("<memory>", program_source, profile);
+    std::string translated = translate_legacy_cg("<memory>", source, profile);
     const bool fragment = (profile == CG_PROFILE_FP20 || profile == CG_PROFILE_ARBFP1 || profile == CG_PROFILE_UNKNOWN);
-    if (!CompileGLSLProgram(program, program->source, fragment)) {
-        free(program);
+    if (!compile_glsl_program(program, translated, fragment)) {
+        std::free(program);
         return NULL;
     }
     return program;
@@ -334,11 +310,12 @@ CGprogram cgCreateProgram(CGcontext ctx, CGenum program_type, const char *progra
 void cgDestroyProgram(CGprogram program)
 {
     if (!program) return;
-    if (((_CGprogram *)program)->glProgram)
-        glDeleteProgram(((_CGprogram *)program)->glProgram);
-    for (size_t i = 0; i < ((const _CGprogram *)program)->params.size(); ++i)
-        free(((const _CGprogram *)program)->params[i]);
-    free(program);
+    _CGprogram *pgm = (_CGprogram *)program;
+    if (pgm->gl_program)
+        glDeleteProgram(pgm->gl_program);
+    for (size_t i = 0; i < pgm->params.size(); ++i)
+        std::free(pgm->params[i]);
+    std::free(pgm);
 }
 
 CGbool cgIsProgram(CGprogram program)
@@ -348,13 +325,15 @@ CGbool cgIsProgram(CGprogram program)
 
 void cgCompileProgram(CGprogram program)
 {
-    if (!program) return;
-    ((_CGprogram *)program)->compiled = 1;
+    if (program)
+        ((_CGprogram *)program)->compiled = true;
 }
 
 CGbool cgIsProgramCompiled(CGprogram program)
 {
-    return program && ((const _CGprogram *)program)->compiled ? CG_TRUE : CG_FALSE;
+    if (!program)
+        return CG_FALSE;
+    return ((_CGprogram *)program)->compiled ? CG_TRUE : CG_FALSE;
 }
 
 CGprofile cgGetProgramProfile(CGprogram program)
@@ -372,18 +351,12 @@ CGerror cgGetError(void)
 const char *cgGetErrorString(CGerror error)
 {
     switch (error) {
-    case CG_NO_ERROR:
-        return "No error";
-    case CG_COMPILER_ERROR:
-        return "Cg shader translation or compile failed";
-    case CG_INVALID_PROFILE_ERROR:
-        return "Unsupported Cg profile";
-    case CG_INVALID_PROGRAM_ERROR:
-        return "Invalid Cg program";
-    case CG_INVALID_PARAMETER_ERROR:
-        return "Invalid Cg parameter";
-    default:
-        return "Unknown Cg compatibility error";
+    case CG_NO_ERROR: return "No error";
+    case CG_COMPILER_ERROR: return "Shader translation/compile failed";
+    case CG_INVALID_PROFILE_ERROR: return "Unsupported Cg profile";
+    case CG_INVALID_PROGRAM_ERROR: return "Invalid Cg program";
+    case CG_INVALID_PARAMETER_ERROR: return "Invalid Cg parameter";
+    default: return "Unknown Cg compatibility error";
     }
 }
 
@@ -396,32 +369,32 @@ const char *cgGetLastErrorString(CGerror *error)
 
 CGparameter cgGetNamedParameter(CGprogram program, const char *name)
 {
-    if (!program || !name || !name[0]) {
-        fail(NULL, CG_INVALID_PARAMETER_ERROR, "Cg compatibility: parameter lookup requires a valid name");
+    if (!program || !name || !*name) {
+        fail(NULL, CG_INVALID_PARAMETER_ERROR, "Cg compatibility: invalid parameter name");
         return NULL;
     }
 
     _CGprogram *pgm = (_CGprogram *)program;
     for (size_t i = 0; i < pgm->params.size(); ++i) {
-        if (strcmp(pgm->params[i]->name, name) == 0)
+        if (std::strcmp(pgm->params[i]->name, name) == 0)
             return pgm->params[i];
     }
 
-    _CGparameter *param = (_CGparameter *)calloc(1, sizeof(*param));
+    _CGparameter *param = (_CGparameter *)std::calloc(1, sizeof(*param));
     if (!param) {
-        fail(pgm->context, CG_UNKNOWN_ERROR, "Cg compatibility: out of memory creating parameter");
+        fail(pgm->context, CG_UNKNOWN_ERROR, "Cg compatibility: out of memory for parameter");
         return NULL;
     }
-    strncpy(param->name, name, sizeof(param->name) - 1);
-    param->location = pgm->glProgram ? glGetUniformLocation(pgm->glProgram, name) : -1;
-    param->isMatrix = (strstr(name, "Matrix") != NULL || strstr(name, "Proj") != NULL);
+    std::strncpy(param->name, name, sizeof(param->name) - 1);
+    param->location = pgm->gl_program ? glGetUniformLocation(pgm->gl_program, name) : -1;
+    param->is_matrix = (std::strstr(name, "Matrix") != NULL || std::strstr(name, "Proj") != NULL);
     pgm->params.push_back(param);
     return param;
 }
 
 void cgDestroyParameter(CGparameter parameter)
 {
-    free(parameter);
+    std::free(parameter);
 }
 
 void cgSetParameter1f(CGparameter parameter, float x)
@@ -486,20 +459,19 @@ void cgGLSetOptimalOptions(CGprofile profile)
 
 void cgGLLoadProgram(CGprogram program)
 {
-    if (!program)
-        return;
-    glUseProgram(((_CGprogram *)program)->glProgram);
+    if (program)
+        glUseProgram(((_CGprogram *)program)->gl_program);
 }
 
 CGbool cgGLIsProgramLoaded(CGprogram program)
 {
-    return program && ((_CGprogram *)program)->glProgram ? CG_TRUE : CG_FALSE;
+    return program && ((_CGprogram *)program)->gl_program ? CG_TRUE : CG_FALSE;
 }
 
 void cgGLBindProgram(CGprogram program)
 {
     if (program)
-        glUseProgram(((_CGprogram *)program)->glProgram);
+        glUseProgram(((_CGprogram *)program)->gl_program);
 }
 
 void cgGLUnbindProgram(CGprofile profile)
@@ -529,8 +501,7 @@ void cgGLSetStateMatrixParameter(CGparameter parameter, int matrix, int transfor
     if (!parameter)
         return;
     _CGparameter *param = (_CGparameter *)parameter;
-    if (param->location >= 0 && param->isMatrix) {
+    if (param->location >= 0 && param->is_matrix)
         glUniformMatrix4fv(param->location, 1, GL_FALSE, param->value);
-    }
 }
 
