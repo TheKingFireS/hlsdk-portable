@@ -94,11 +94,12 @@ struct skilldata_t
 
 	// Player Weapons
 	float plrDmgCrowbar;
+	float plrDmgCrowbarSec; // buz
 	float plrDmg9MM;
 	float plrDmg357;
-	float plrDmgMP5;
+	float plrDmgMP5; // used in paranoia
 	float plrDmgM203Grenade;
-	float plrDmgBuckshot;
+	float plrDmgBuckshot; // used in paranoia
 	float plrDmgCrossbowClient;
 	float plrDmgCrossbowMonster;
 	float plrDmgRPG;
@@ -109,18 +110,42 @@ struct skilldata_t
 	float plrDmgHandGrenade;
 	float plrDmgSatchel;
 	float plrDmgTripmine;
-	
+	// buz: paranoia weapons
+	float plrDmgAps;
+	float plrDmgBarret;
+	float plrDmgAks;
+	float plrDmgAk47;
+	float plrDmgAsval;
+	float plrDmgRpk;
+	float plrDmgGroza;
+
 	// weapons shared by monsters
 	float monDmg9MM;
 	float monDmgMP5;
 	float monDmg12MM;
 	float monDmgHornet;
+	// buz: paranoia monsters:
+	float monDmgAK;
+	float monDmgAsval;
+	float monDmgGroza;
+	float monTerDmgAK;
+	float monTerDmgRPK;
+	float monDmgGlock;
+
+	float MilDmgKick;
+	float milHealth;
+	float alphaHealth;
+	float terrorHealth;
+	float cloneHealth;
+	float cloneHealthHeavy;
 
 	// health/suit charge
 	float suitchargerCapacity;
 	float batteryCapacity;
 	float healthchargerCapacity;
 	float healthkitCapacity;
+	float bighealthkitCapacity; // buz
+	float painkillerCapacity; // buz
 	float scientistHeal;
 
 	// monster damage adj
@@ -137,9 +162,19 @@ struct skilldata_t
 	float plrLeg;
 	float plrArm;
 
+	// Wargon: Множители дамаги для monster_zombie. (1.1)
+	float zomHead;
+	float zomChest;
+	float zomStomach;
+	float zomLeg;
+	float zomArm;
+
 	// buz: maxspeeds
 	float plrPrimaryMaxSpeed;	// in primary weapon mode
 	float plrSecondaryMaxSpeed;	// in secondary weapon mode
+
+	// Wargon: Патроны из мертвых вражин. (1.1)
+	float maxDeadEnemyAmmo;
 };
 
 extern	DLL_GLOBAL	skilldata_t	gSkillData;
