@@ -26,6 +26,7 @@
 #include "nodes.h"
 #include "defaultai.h"
 #include "soundent.h"
+#include "rushscript.h" // buz
 
 extern CGraph WorldGraph;
 
@@ -184,6 +185,7 @@ BOOL CBaseMonster::FScheduleValid( void )
 #if DEBUG
 		if( HasConditions( bits_COND_TASK_FAILED ) && m_failSchedule == SCHED_NONE )
 		{
+			//ALERT(at_console, "failed: %s\n", m_pSchedule->pName);
 			// fail! Send a visual indicator.
 			ALERT( at_aiconsole, "Schedule: %s Failed\n", m_pSchedule->pName );
 
@@ -437,6 +439,56 @@ void CBaseMonster::RunTask( Task_t *pTask )
 			}
 			break;
 		}
+
+	case TASK_MOVE_TO_TARGET_RANGE2: // buz
+		{
+			float distance;
+
+			if ( m_hTargetEnt == nullptr )
+				TaskFail();
+			else
+			{
+				distance = ( m_vecMoveGoal - pev->origin ).Length2D();
+				// Re-evaluate when you think your finished, or the target has moved too far
+				if ( (distance < m_flRushDistance) || (m_vecMoveGoal - m_hTargetEnt->pev->origin).Length() > m_flRushDistance * 0.5 )
+				{
+					// buz: за то время, пока мы бежали к цели, она могла обновиться.
+					//  спрашиваем цель еще раз.
+					CStartRush* pRush = (CStartRush*)UTIL_FindEntityByTargetname(NULL, STRING( m_hRushEntity ));
+					if (pRush)
+						m_hTargetEnt = pRush->GetDestinationEntity();
+
+					m_vecMoveGoal = m_hTargetEnt->pev->origin;
+					distance = ( m_vecMoveGoal - pev->origin ).Length2D();
+					FRefreshRoute();
+				}
+
+				if ( distance < m_flRushDistance )
+				{
+					TaskComplete();
+					RouteClear();		// Stop moving
+
+					CBaseEntity *pRushEntity = UTIL_FindEntityByTargetname( NULL, STRING( m_hRushEntity ) );
+					m_hRushEntity = iStringNull;
+					m_hTargetEnt = NULL;
+
+					if (pRushEntity)
+					{
+						CStartRush* pRush = (CStartRush*)pRushEntity;
+						pRush->ReportSuccess(this);
+					}
+					else
+						ALERT(at_console, "ERROR: reached target, but no rush entity!\n");
+				}
+			//	else if ( distance < 190 && m_movementActivity != ACT_WALK )
+			//		m_movementActivity = ACT_WALK;
+			//	else if ( distance >= 270 && m_movementActivity != ACT_RUN )
+			//		m_movementActivity = ACT_RUN;
+			}
+
+			break;
+		}
+
 	case TASK_WAIT_FOR_MOVEMENT:
 		{
 			if( MovementIsComplete() )
@@ -888,11 +940,54 @@ void CBaseMonster::StartTask( Task_t *pTask )
 			else
 			{
 				m_vecMoveGoal = m_hTargetEnt->pev->origin;
-				if( !MoveToTarget( ACT_WALK, 2 ) )
+				if( !MoveToTarget( ACT_WALK, 0.5 ) )
 					TaskFail();
 			}
 			break;
 		}
+
+	case TASK_MOVE_TO_TARGET_RANGE2: // buz
+		{
+			float distance = ( m_hTargetEnt->pev->origin - pev->origin ).Length2D();
+
+			if (distance < m_flRushDistance)
+			{
+				TaskComplete();
+
+				CBaseEntity *pRushEntity = UTIL_FindEntityByTargetname( NULL, STRING( m_hRushEntity ) );
+				m_hRushEntity = iStringNull;
+				m_hTargetEnt = NULL;
+				if (pRushEntity)
+				{
+					CStartRush* pRush = (CStartRush*)pRushEntity;
+					pRush->ReportSuccess(this);
+				}
+				else
+					ALERT(at_console, "ERROR: reached target, but no rush entity!\n");
+
+			//	ALERT(at_console, "already there! rushdist: %f, mydist: %f\n", m_flRushDistance, distance);
+			}
+			else
+			{
+				m_vecMoveGoal = m_hTargetEnt->pev->origin;
+
+				Activity act = m_iRushMovetype ? ACT_WALK : ACT_RUN;
+				if (LookupActivity ( act ) == ACTIVITY_NOT_AVAILABLE)
+				{
+					act = m_iRushMovetype ? ACT_RUN : ACT_WALK; // get another movement activity
+					ALERT(at_aiconsole, "Rush target: monster %s doesnt support this movement activity\n", STRING(pev->classname));
+				}
+
+				if ( !MoveToTarget( act, 0.5 ) )
+				{
+					m_flRushNextTime = gpGlobals->time + 3;// попробуем через три секунды еще раз
+					TaskFail();
+				//	ALERT(at_console, "NO PATH!!!\n");
+				}
+			}
+			break;
+		}
+
 	case TASK_RUN_TO_SCRIPT:
 	case TASK_WALK_TO_SCRIPT:
 		{
@@ -1467,6 +1562,23 @@ Schedule_t *CBaseMonster::GetSchedule( void )
 		}
 	case MONSTERSTATE_IDLE:
 		{
+			// buz: rush target
+			if (!FStringNull(m_hRushEntity) && (gpGlobals->time > m_flRushNextTime) && (m_flRushNextTime != -1))
+			{
+				CBaseEntity *pRushEntity = UTIL_FindEntityByTargetname( NULL, STRING( m_hRushEntity ) );
+				if (pRushEntity)
+				{
+					CStartRush* pRush = (CStartRush*)pRushEntity;
+					m_hTargetEnt = pRush->GetDestinationEntity();
+
+					return GetScheduleOfType( SCHED_RUSH_TARGET );
+				}
+				else
+					// rush entity not found on this map.
+					//   try again after next changelevel
+					m_flRushNextTime = -1;
+			}
+
 			if( HasConditions( bits_COND_HEAR_SOUND ) )
 			{
 				return GetScheduleOfType( SCHED_ALERT_FACE );
@@ -1485,6 +1597,23 @@ Schedule_t *CBaseMonster::GetSchedule( void )
 		}
 	case MONSTERSTATE_ALERT:
 		{
+			// buz: rush target
+			if (!FStringNull(m_hRushEntity) && (gpGlobals->time > m_flRushNextTime) && (m_flRushNextTime != -1))
+			{
+				CBaseEntity *pRushEntity = UTIL_FindEntityByTargetname( NULL, STRING( m_hRushEntity ) );
+				if (pRushEntity)
+				{
+					CStartRush* pRush = (CStartRush*)pRushEntity;
+					m_hTargetEnt = pRush->GetDestinationEntity();
+
+					return GetScheduleOfType( SCHED_RUSH_TARGET );
+				}
+				else
+					// rush entity not found on this map.
+					//   try again after next changelevel
+					m_flRushNextTime = -1;
+			}
+
 			if( HasConditions( bits_COND_ENEMY_DEAD ) && LookupActivity( ACT_VICTORY_DANCE ) != ACTIVITY_NOT_AVAILABLE )
 			{
 				return GetScheduleOfType( SCHED_VICTORY_DANCE );

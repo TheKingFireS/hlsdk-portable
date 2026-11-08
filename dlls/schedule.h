@@ -72,6 +72,7 @@ typedef enum
 		SCHED_BARNACLE_VICTIM_CHOMP,
 		SCHED_AISCRIPT,
 		SCHED_FAIL,
+		SCHED_RUSH_TARGET, // buz
 
 		LAST_COMMON_SCHEDULE			// Leave this at the bottom
 } SCHEDULE_TYPE;
@@ -89,6 +90,7 @@ typedef enum
 		TASK_WALK_TO_SCRIPT,
 		TASK_RUN_TO_SCRIPT,
 		TASK_MOVE_TO_TARGET_RANGE,
+		TASK_MOVE_TO_TARGET_RANGE2, // buz
 		TASK_GET_PATH_TO_ENEMY,
 		TASK_GET_PATH_TO_ENEMY_LKP,
 		TASK_GET_PATH_TO_ENEMY_CORPSE,
@@ -267,6 +269,7 @@ struct WayPoint_t
 #define bits_COND_CAN_RANGE_ATTACK2		( 1 << 12)
 #define bits_COND_CAN_MELEE_ATTACK2		( 1 << 13)
 // #define bits_COND_CAN_RANGE_ATTACK3		( 1 << 14)
+#define bits_COND_CROUCH_NOT_SAFE			( 1 << 14) // buz: monster will be not safe if he crouch
 #define bits_COND_PROVOKED				( 1 << 15)
 #define bits_COND_NEW_ENEMY				( 1 << 16)
 #define bits_COND_HEAR_SOUND			( 1 << 17) // there is an interesting sound

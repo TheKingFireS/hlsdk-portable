@@ -102,6 +102,8 @@ public:
 
 	Vector m_HackedGunPos;	// HACK until we can query end of gun
 
+	int m_iUseAlertAnims; // buz: start in alert state
+
 	// Scripted sequence Info
 	SCRIPTSTATE m_scriptState;		// internal cinematic state
 	CCineMonster *m_pCine;
@@ -276,7 +278,7 @@ public:
 	virtual void BarnacleVictimBitten( entvars_t *pevBarnacle );
 	virtual void BarnacleVictimReleased( void );
 
-	void SetEyePosition( void );
+	virtual void SetEyePosition( void );
 
 	BOOL FShouldEat( void );// see if a monster is 'hungry'
 	void Eat( float flFullDuration );// make the monster 'full' for a while.
@@ -292,7 +294,7 @@ public:
 	// PrescheduleThink 
 	virtual void PrescheduleThink( void ) { return; };
 
-	BOOL GetEnemy( void );
+	virtual BOOL GetEnemy( void ); // buz: make virtual
 	void MakeDamageBloodDecal( int cCount, float flNoise, TraceResult *ptr, const Vector &vecDir );
 	void TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType);
 
@@ -309,8 +311,9 @@ public:
 	virtual BOOL HasAlienGibs( void );
 	virtual void FadeMonster( void );	// Called instead of GibMonster() when gibs are disabled
 
-	Vector ShootAtEnemy( const Vector &shootOrigin );
-	virtual Vector BodyTarget( const Vector &posSrc ) { return Center() * 0.75 + EyePosition() * 0.25; };		// position to shoot at
+	virtual Vector ShootAtEnemy( const Vector &shootOrigin );
+	//virtual Vector BodyTarget( const Vector &posSrc ) { return Center() * 0.75 + EyePosition() * 0.25; };		// position to shoot at
+	virtual Vector BodyTarget( const Vector &posSrc ) { return Center( ) * 0.5 + EyePosition() * 0.5; }; // buz: fix to allow grunts shoot over obstacles
 
 	virtual	Vector GetGunPosition( void );
 
@@ -329,8 +332,9 @@ public:
 	virtual void AlertSound( void ) { return; };
 	virtual void IdleSound( void ) { return; };
 	virtual void PainSound( void ) { return; };
+	virtual void BlockedByPlayer ( CBasePlayer *pBlocker ) { return; }; // buz
 
-	virtual void StopFollowing( BOOL clearSchedule ) {}
+	virtual void StopFollowing( BOOL clearSchedule, int speakSentence = TRUE ) {} // buz
 
 	inline void Remember( int iMemory ) { m_afMemory |= iMemory; }
 	inline void Forget( int iMemory ) { m_afMemory &= ~iMemory; }
@@ -350,5 +354,11 @@ public:
 		/*ALERT(at_console, "monster CR: %f/%f = %f\n", pev->health, pev->max_health, pev->health / pev->max_health);*/
 		return pev->health / pev->max_health;
 	}
+
+	// buz: rush vars
+	string_t	m_hRushEntity;
+	int			m_iRushMovetype;
+	float		m_flRushDistance;
+	float		m_flRushNextTime;
 };
 #endif // BASEMONSTER_H

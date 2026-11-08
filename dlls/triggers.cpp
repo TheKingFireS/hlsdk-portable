@@ -35,6 +35,7 @@
 #include "locus.h" //LRC
 //#include "hgrunt.h"
 //#include "islave.h"
+#include "rushscript.h" // buz
 
 #define	SF_TRIGGER_PUSH_START_OFF	2//spawnflag that makes trigger_push spawn turned OFF
 #define SF_TRIGGER_HURT_TARGETONCE	1// Only fire hurt target once
@@ -47,6 +48,8 @@ extern DLL_GLOBAL BOOL		g_fGameOver;
 
 extern void SetMovedir(entvars_t* pev);
 extern Vector VecBModelOrigin( entvars_t* pevBModel );
+
+extern int gmsgTextWindow; // buz
 
 class CFrictionModifier : public CBaseEntity
 {
@@ -5339,3 +5342,67 @@ void CTriggerCamera::Move()
 	float fraction = 2 * gpGlobals->frametime;
 	pev->velocity = ( ( pev->movedir * pev->speed ) * fraction ) + ( pev->velocity * ( 1 - fraction ) );
 }
+
+//======== buz: buz: rush script ======================
+
+void CStartRush :: Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	CBaseEntity* pTarget = NULL;
+	pTarget = UTIL_FindEntityByTargetname(pTarget, STRING(pev->target), pActivator);
+	if (!pTarget)
+	{
+		ALERT(at_console, "scripted_startrush cant find monster %s\n", STRING(pev->target));
+		return;
+	}
+
+	CBaseMonster* pMonster = pTarget->MyMonsterPointer();
+	if (!pMonster)
+	{
+		ALERT(at_console, "%s is not a monster!\n", STRING(pev->target));
+		return;
+	}
+
+	pMonster->m_hRushEntity = pev->targetname;
+	pMonster->m_iRushMovetype = pev->weapons;
+	pMonster->m_flRushDistance = pev->frags;
+	pMonster->m_flRushNextTime = 0;
+
+//	ALERT(at_console, "RUSH use org: %f, %f, %f\n", pev->origin.x, pev->origin.y, pev->origin.z);
+}
+
+CBaseEntity* CStartRush :: GetDestinationEntity( void )
+{
+	if (!FStringNull(pev->message))
+	{
+		CBaseEntity* pTarget = NULL;
+		pTarget = UTIL_FindEntityByTargetname(pTarget, STRING(pev->message));
+		if (!pTarget)
+		{
+			ALERT(at_console, "scripted_startrush cant find entity %s\n", STRING(pev->message));
+			return this;
+		}
+		return pTarget;
+	}
+	//ALERT(at_console, "RUSH: RETURNING org: %f, %f, %f\n", pev->origin.x, pev->origin.y, pev->origin.z);
+
+	return this;
+}
+
+void CStartRush :: ReportSuccess( CBaseEntity* who )
+{
+	//ALERT(at_console, " CStartRush got succes report\n");
+
+	if (!FStringNull(pev->netname))
+	{
+		FireTargets( STRING(pev->netname), who, this, USE_TOGGLE, 0 );
+		//ALERT(at_console, " CStartRush firing: %s\n", STRING(pev->netname));
+	}
+}
+
+void CStartRush :: Spawn( void )
+{
+	pev->solid = SOLID_NOT;
+	//pev->effects = EF_NODRAW;
+}
+
+LINK_ENTITY_TO_CLASS( scripted_startrush, CStartRush );
