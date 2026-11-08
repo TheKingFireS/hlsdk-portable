@@ -444,7 +444,7 @@ void CBaseMonster::RunTask( Task_t *pTask )
 		{
 			float distance;
 
-			if ( m_hTargetEnt == nullptr )
+			if ( m_hTargetEnt == NULL )
 				TaskFail();
 			else
 			{
