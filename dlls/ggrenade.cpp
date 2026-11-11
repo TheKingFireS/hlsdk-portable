@@ -90,6 +90,8 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 		WRITE_BYTE( TE_EXPLFLAG_NONE );
 	MESSAGE_END();
 
+	//ALERT(at_console, "%f\n", pev->dmg);
+
 	CSoundEnt::InsertSound( bits_SOUND_COMBAT, pev->origin, NORMAL_EXPLOSION_VOLUME, 3.0 );
 	entvars_t *pevOwner;
 	if( pev->owner )
@@ -432,6 +434,10 @@ CGrenade *CGrenade::ShootTimed( entvars_t *pevOwner, Vector vecStart, Vector vec
 
 	pGrenade->pev->gravity = 0.5f;
 	pGrenade->pev->friction = 0.8f;
+
+	// buz
+	pGrenade->pev->angles.y -= 90.0f;
+	pGrenade->pev->avelocity.z = -400.0f;
 
 	pGrenade->pev->dmg = gSkillData.plrDmgHandGrenade;
 

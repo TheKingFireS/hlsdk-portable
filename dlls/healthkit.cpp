@@ -93,6 +93,64 @@ BOOL CHealthKit::MyTouch( CBasePlayer *pPlayer )
 	return FALSE;
 }
 
+// buz: big healthkit
+class CBigHealthKit : public CItem
+{
+public:
+	void Spawn( void )
+	{
+		Precache( );
+		if (pev->model)
+			SET_MODEL(ENT(pev), STRING(pev->model)); //LRC
+		else
+			SET_MODEL(ENT(pev), "models/w_bigmedkit.mdl");
+
+		CItem::Spawn();
+	}
+
+	void Precache( void )
+	{
+		if (pev->model)
+			PRECACHE_MODEL((char*)STRING(pev->model)); //LRC
+		else
+			PRECACHE_MODEL("models/w_bigmedkit.mdl");
+
+		PRECACHE_SOUND("items/bigmedkit.wav");
+	}
+
+	BOOL MyTouch( CBasePlayer *pPlayer )
+	{
+		if ( pPlayer->pev->deadflag != DEAD_NO )
+		{
+			return FALSE;
+		}
+
+		if ( pPlayer->TakeHealth( gSkillData.bighealthkitCapacity, DMG_GENERIC ) )
+		{
+			MESSAGE_BEGIN( MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev );
+				WRITE_STRING( STRING(pev->classname) );
+			MESSAGE_END();
+
+			EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/bigmedkit.wav", 1, ATTN_NORM);
+
+			if ( g_pGameRules->ItemShouldRespawn( this ) )
+			{
+				Respawn();
+			}
+			else
+			{
+				UTIL_Remove(this);
+			}
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+};
+
+LINK_ENTITY_TO_CLASS( item_bighealthkit, CBigHealthKit );
+
 //-------------------------------------------------------------
 // Wall mounted health kit
 //-------------------------------------------------------------

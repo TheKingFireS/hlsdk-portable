@@ -204,6 +204,14 @@ void CLight :: SetStyle ( int iszPattern )
 {
 	if (m_iStyle < 32) // if it's using a global style, don't change it
 		return;
+
+	// buz: don't allow to modify bump styles
+	if (m_iStyle >= 61)
+	{
+		ALERT(at_console, "this light style is not allowed to be modified\n");
+		return;;
+	}
+
 	m_iszCurrentStyle = iszPattern;
 //	ALERT(at_console, "SetStyle %d \"%s\"\n", m_iStyle, (char *)STRING( iszPattern ));
 	LIGHT_STYLE(m_iStyle, (char *)STRING( iszPattern ));
@@ -630,6 +638,13 @@ void CTriggerLightstyle::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE
 		// not a light entity?
 		if (!FClassnameIs(pTarget->pev, "light") && !FClassnameIs(pTarget->pev, "light_spot") && !FClassnameIs(pTarget->pev, "light_environment"))
 		{
+			// buz: don't allow to modify bump styles
+			if (pTarget->m_iStyle >= 61)
+			{
+				ALERT(at_console, "this light style is not allowed to be modified\n");
+				continue;
+			}
+
 			if (pTarget->m_iStyle >= 32)
 				LIGHT_STYLE(pTarget->m_iStyle, (char*)STRING(iszPattern));
 		}

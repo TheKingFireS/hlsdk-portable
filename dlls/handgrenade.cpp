@@ -120,14 +120,30 @@ void CHandGrenade::PrimaryAttack()
 
 void CHandGrenade::WeaponIdle( void )
 {
-	if( m_flReleaseThrow == 0.0f && m_flStartThrow )
-		 m_flReleaseThrow = gpGlobals->time;
-
 	if( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
 
 	if( m_flStartThrow )
 	{
+		if ( m_flReleaseThrow > 0.0f )
+		{
+			// buz: уже кинули, теперь надо достать новую или переключить оружие
+			m_flStartThrow = 0.0f;
+			m_flReleaseThrow = -1.0f;
+
+			if ( m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] )
+			{
+				SendWeaponAnim( HANDGRENADE_DRAW );
+				m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10.0f, 15.0f );
+			}
+			else
+			{
+				RetireWeapon();
+			}
+			return;
+		}
+
+		m_flReleaseThrow = gpGlobals->time;
 		Vector angThrow = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 
 		if( angThrow.x < 0.0f )
@@ -150,7 +166,7 @@ void CHandGrenade::WeaponIdle( void )
 		if( time < 0.0f )
 			time = 0.0f;
 
-		CGrenade::ShootTimed( m_pPlayer->pev, vecSrc, vecThrow, time );
+		CGrenade::ShootTimed( m_pPlayer->pev, vecSrc, vecThrow, 3.0f /*time*/ );
 
 		if( flVel < 500.0f )
 		{
@@ -168,43 +184,12 @@ void CHandGrenade::WeaponIdle( void )
 		// player "shoot" animation
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-#if !HANDGRENADE_DEPLOY_FIX
-		m_flReleaseThrow = 0.0f;
-#endif
-		m_flStartThrow = 0.0f;
-		m_flNextPrimaryAttack = GetNextAttackDelay( 0.5f );
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.8f;
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5f;
 
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
-
-		if( !m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
-		{
-			// just threw last grenade
-			// set attack times in the future, and weapon idle in the future so we can see the whole throw
-			// animation, weapon idle will automatically retire the weapon for us.
-			m_flTimeWeaponIdle = m_flNextSecondaryAttack = m_flNextPrimaryAttack = GetNextAttackDelay( 0.5f );// ensure that the animation can finish playing
-		}
-		return;
-	}
-	else if( m_flReleaseThrow > 0.0f )
-	{
-		// we've finished the throw, restart.
-		m_flStartThrow = 0.0f;
-
-		if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
-		{
-			SendWeaponAnim( HANDGRENADE_DRAW );
-		}
-		else
-		{
-			RetireWeapon();
 			return;
 		}
-
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10.0f, 15.0f );
-		m_flReleaseThrow = -1.0f;
-		return;
-	}
 
 	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
 	{
